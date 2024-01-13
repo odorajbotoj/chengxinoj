@@ -1,0 +1,48 @@
+<div id="divAdmin">
+	<h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
+  <!-- 比赛 -->
+  <fieldset id="sendFiles">
+		<legend>比赛</legend>
+    <form action="/timer">
+      <input type="checkbox" id="durationLimit" name="durationLimit" />
+      <label for="durationLimit">限制时间(分钟)</label>
+      <input type="number" id="timeDuration" name="timeDuration" min="1" max="300" value="240" />
+      <input class="btn" type="submit" formmethod="get" value="开始比赛" />
+      <input class="btn" type="submit" formmethod="post" value="结束比赛" />
+      <script type="text/javascript">
+        const dlcb = document.querySelector("#durationLimit");
+        const tdov = document.querySelector("#timeDuration");
+        tdov.style.visibility = "hidden";
+        dlcb.addEventListener("change", () => {
+          if (dlcb.checked) {
+            tdov.style.visibility = "visible";
+            tdov.value = "240";
+          } else {
+            tdov.style.visibility = "hidden";
+          }
+        });
+      </script>
+    </form>
+	</fieldset>
+  <!-- 文件 -->
+	<fieldset id="sendFiles" style="border-color: red; border-style: solid;">
+		<legend style="background-color: red; color: white;">文件</legend>
+    <ul>
+		{{range $name,$size := .SendFiles}}
+		  	<li><a href="send?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)&nbsp;&nbsp;&nbsp;&nbsp;<a href="delu?fn={{$name}}" onclick="return confirm('确认删除 {{$name}} ?');">[删除]</a></li>
+	  	{{else}}
+	  		<li>没有文件</li>
+	  	{{end}}
+	  	<hr />
+	  	<li>
+	  		<form method="post" action="/upldu" enctype="multipart/form-data">
+	  			<div>
+	  				<label>单次上传文件大小总和不得大于100MB</label>
+	  			</div>
+	  			<input type="file" id="file" name="file" multiple />
+	  			<input type="submit" class="btn" value="上传" />
+	  		</form>
+	  	</li>
+    </ul>
+	</fieldset>
+</div>
