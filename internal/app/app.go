@@ -3,9 +3,19 @@ package service
 import (
 	"log"
 	"net/http"
+
+	"github.com/tidwall/buntdb"
 )
 
 func Run() {
+	// 数据库
+
+	db, err := buntdb.Open(":memory:")
+	if err != nil {
+		elog.Fatalln(err)
+	}
+	defer db.Close()
+
 	// 服务器建立
 
 	// 静态资源

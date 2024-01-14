@@ -54,21 +54,3 @@ func readConfigTo(c *Config) error {
 	}
 	return nil
 }
-
-// // 保存修改的config
-// func updateLocalConfig(c Config) error {
-// 	f, err := os.Create("config.json") // 覆写config.json
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer f.Close()
-// 	bts, err := json.MarshalIndent(c, "", "    ")
-// 	if err != nil {
-// 		return err
-// 	}
-// 	_, err = f.Write(bts)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }

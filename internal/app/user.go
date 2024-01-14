@@ -8,10 +8,21 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 func fReg(w http.ResponseWriter, r *http.Request) {
 	//
+	if r.Method == "GET" {
+		// 如果是GET则返回页面
+		w.Write(strings.Replace(BASEHTML, "<!--REPLACE-->", USERREGHTML, 1))
+	} else if r.Method == "POST" {
+		// 如果是POST则注册用户
+	} else {
+		// 400
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
 }
 
 func fLogin(w http.ResponseWriter, r *http.Request) {

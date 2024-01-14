@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"sync"
+
+	"github.com/tidwall/buntdb"
 )
 
 const (
@@ -17,8 +19,6 @@ const (
 var (
 	// 全局变量读写锁
 	gvm sync.RWMutex
-	// 网页模板
-	mainTemplate *template.Template
 	// 是否开始比赛
 	isStarted bool = false
 	// 比赛开始时间
@@ -29,6 +29,9 @@ var (
 
 // 全局设置
 var cfg Config
+
+// 数据库
+var db *buntdb.DB
 
 func Init() {
 	// 新建elog, 专用输出错误信息

@@ -18,5 +18,6 @@ func init() {
 }
 
 func main() {
+	// 主程序入口
 	app.Run()
 }
