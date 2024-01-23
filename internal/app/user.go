@@ -14,6 +14,11 @@ import (
 func fReg(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// 如果是GET则返回页面
+		_, isl, isa := checkUser(r)
+		if isl && !isa {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
 		tmpl, err := template.New("reg").Parse(USERREGHTML)
 		if err != nil {
 			elog.Println(err)
@@ -29,10 +34,13 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if r.Method == "POST" {
 		// 如果是POST则注册用户
-		if !canReg {
+		_, _, isa := checkUser(r)
+		gvm.RLock()
+		if !canReg && !isa {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，当前禁止注册");window.location.replace("/");</script>`))
 			return
 		}
+		gvm.RUnlock()
 		// 检查表单是否为空
 		r.ParseForm()
 		if len(r.Form["userRegName"]) == 0 || len(r.Form["userRegMd5"]) == 0 {
@@ -62,7 +70,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				if !ex {
-					err = os.Mkdir("recv/"+r.Form["userRegName"][0], 0644)
+					err = os.Mkdir("recv/"+r.Form["userRegName"][0], 0755)
 					if err != nil {
 						w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/");</script>`))
 						elog.Println(err)
@@ -103,6 +111,11 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 func fLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// 如果是GET则返回页面
+		_, isl, _ := checkUser(r)
+		if isl {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
 		tmpl, err := template.New("login").Parse(LOGINHTML)
 		if err != nil {
 			elog.Println(err)

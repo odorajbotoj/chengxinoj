@@ -27,7 +27,7 @@ func getPageData(r *http.Request) PageData {
 	pd.StartTime = startTime
 	pd.Duration = duration
 	gvm.RUnlock()
-	pd.SendFiles = getSend()
+	pd.SendFiles = getFileList("send/")
 
 	pd.Name, pd.IsLogin, pd.IsAdmin = checkUser(r)
 	return pd

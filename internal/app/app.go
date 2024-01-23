@@ -28,14 +28,15 @@ func Run() {
 	go timer()
 
 	// 注册路由
-	http.HandleFunc("/", fIndex)
-	http.HandleFunc("/reg", fReg)
-	http.HandleFunc("/login", fLogin)
-	http.HandleFunc("/exit", fExit)
-	// http.HandleFunc("/send", fSend)
-	// http.HandleFunc("/del", fDel)
-	// http.HandleFunc("/upld", fUpld)
-	http.HandleFunc("/timer", fTimer)
-	// http.HandleFunc("/rk", fRk)
+	http.HandleFunc("/", fIndex)            // 根页面，用户主页面
+	http.HandleFunc("/reg", fReg)           // 注册页面
+	http.HandleFunc("/login", fLogin)       // 登录页面
+	http.HandleFunc("/exit", fExit)         // 退出登录
+	http.HandleFunc("/getSend", fGetSend)   // 下载下发的文件
+	http.HandleFunc("/delSend", fDelSend)   // 删除下发的文件
+	http.HandleFunc("/upldSend", fUpldSend) // 上传要下发的文件
+	// http.HandleFunc("/commit", fCommit)     // 用户提交
+	http.HandleFunc("/timer", fTimer) // 计时器
+	// http.HandleFunc("/rk", fRk) // 排行榜
 	elog.Fatalln(http.ListenAndServe(cfg.Port, nil))
 }

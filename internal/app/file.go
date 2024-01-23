@@ -1,6 +1,8 @@
 package app
 
-import "os"
+import (
+	"os"
+)
 
 // 判断文件或目录是否存在
 func exists(path string) (bool, error) {
@@ -43,4 +45,24 @@ func checkDir(path string) error {
 		}
 	}
 	return nil
+}
+
+// 获取文件列表
+func getFileList(path string) map[string]int64 {
+	var ret = make(map[string]int64)
+	rd, err := os.ReadDir(path)
+	if err != nil {
+		elog.Println("getSendList: ", err)
+		return ret
+	}
+	for _, fi := range rd {
+		if !fi.IsDir() {
+			info, err := fi.Info()
+			if err != nil {
+				continue
+			}
+			ret[info.Name()] = info.Size()
+		}
+	}
+	return ret
 }
