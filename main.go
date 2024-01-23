@@ -13,7 +13,7 @@ func init() {
 
 	// 加载配置文件
 	log.Println("Init...")
-	service.Init()
+	app.Init()
 	log.Println("Init Done.")
 }
 

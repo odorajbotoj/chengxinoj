@@ -1,11 +1,11 @@
-package service
+package app
 
 import (
 	"embed"
-	"html/template"
 	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/tidwall/buntdb"
@@ -21,11 +21,30 @@ var (
 	gvm sync.RWMutex
 	// 是否开始比赛
 	isStarted bool = false
+	// 是否允许注册
+	canReg bool = true
 	// 比赛开始时间
 	startTime int64 = 0
 	// 比赛延续时间
 	duration int64 = 0
 )
+
+// 加载网页资源
+//
+//go:embed static/html/base.html
+var BASEHTML string
+
+//go:embed static/html/index.html
+var INDEXHTML string
+
+//go:embed static/html/userReg.html
+var USERREGHTML string
+
+//go:embed static/html/login.html
+var LOGINHTML string
+
+//go:embed static/scripts
+var scriptsFs embed.FS
 
 // 全局设置
 var cfg Config
@@ -33,13 +52,16 @@ var cfg Config
 // 数据库
 var db *buntdb.DB
 
+// 专用输出错误信息
+var elog *log.Logger
+
 func Init() {
 	// 新建elog, 专用输出错误信息
 	eLogFile, err := os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		log.Fatalln("Init: cannot create log file: ", err)
 	}
-	elog := log.New(io.MultiWriter(eLogFile, os.Stdout), "[ERR] ", log.Ldate|log.Lmicroseconds|log.Lshortfile)
+	elog = log.New(io.MultiWriter(eLogFile, os.Stdout), "[ERR] ", log.Ldate|log.Lmicroseconds|log.Lshortfile)
 
 	// 检查配置文件
 	err = checkConfig()
@@ -74,9 +96,8 @@ func Init() {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
 
-	// 加载模板
-	mainTemplate, err = loadTemplate()
-	if err != nil {
-		elog.Fatalln("loadTemplate: ", err)
-	}
+	// 加载网页模板
+	INDEXHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", INDEXHTML, 1)
+	USERREGHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERREGHTML, 1)
+	LOGINHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", LOGINHTML, 1)
 }

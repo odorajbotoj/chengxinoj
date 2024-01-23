@@ -1,4 +1,4 @@
-package service
+package app
 
 import (
 	"net/http"
@@ -18,7 +18,7 @@ type PageData struct {
 	SendFiles map[string]int64
 }
 
-func getPageData(w http.ResponseWriter, r *http.Request) PageData {
+func getPageData(r *http.Request) PageData {
 	var pd PageData
 	pd.Title = cfg.Title
 	pd.Version = VERSION
@@ -29,6 +29,6 @@ func getPageData(w http.ResponseWriter, r *http.Request) PageData {
 	gvm.RUnlock()
 	pd.SendFiles = getSend()
 
-	pd.Name, pd.IsLogin, pd.IsAdmin = checkUser(w, r)
+	pd.Name, pd.IsLogin, pd.IsAdmin = checkUser(r)
 	return pd
 }

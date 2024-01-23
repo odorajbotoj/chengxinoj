@@ -1,4 +1,4 @@
-package service
+package app
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 // 获取教师下发的文件列表
 func getSend() map[string]int64 {
 	var ret = make(map[string]int64)
-	rd, err := os.ReadDir(cfg.SendFileDir)
+	rd, err := os.ReadDir("send/")
 	if err != nil {
 		log.Println("readSend: ", err)
 		return ret
@@ -30,7 +30,7 @@ func getSend() map[string]int64 {
 
 // 下载教师下发的文件
 func fSend(w http.ResponseWriter, r *http.Request) {
-	_, isLogin, _ := checkUser(w, r)
+	_, isLogin, _ := checkUser(r)
 	if !isLogin {
 		return
 	}
@@ -44,13 +44,13 @@ func fSend(w http.ResponseWriter, r *http.Request) {
 		log.Println("fSend: ", err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 	} else {
-		b, err := os.ReadFile(cfg.SendFileDir + fn)
+		b, err := os.ReadFile("send/" + fn)
 		if err != nil {
 			log.Println("fSend: ", err)
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		finfo, _ := os.Stat(cfg.SendFileDir + fn)
+		finfo, _ := os.Stat("send/" + fn)
 		w.Header().Set("Content-Disposition", "attachment; filename="+fn)
 		w.Header().Set("Content-Type", http.DetectContentType(b))
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", finfo.Size()))

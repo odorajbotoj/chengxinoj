@@ -1,4 +1,4 @@
-package service
+package app
 
 import (
 	"log"
@@ -53,7 +53,7 @@ func timer() {
 }
 
 func fTimer(w http.ResponseWriter, r *http.Request) {
-	name, isLogin, isAdmin := checkUser(w, r)
+	name, isLogin, isAdmin := checkUser(r)
 	if name == "admin" && isLogin && isAdmin {
 		if r.Method == "GET" && !isStarted {
 			dl := r.URL.Query().Get("durationLimit")
