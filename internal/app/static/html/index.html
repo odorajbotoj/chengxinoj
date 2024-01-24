@@ -1,5 +1,5 @@
 {{if .IsLogin}}
-<p>Name: {{.Name}} <a href="/exit" onclick="return confirm('确认退出登录?');">[退出登录]</a></p>
+<p>您好，{{.Name}}！ <a href="/exit" onclick="return confirm('确认退出登录?');">[退出登录]</a></p>
 {{if .IsAdmin}}
   {{template "tAdmin" .}}
 {{else}}
@@ -17,13 +17,13 @@
 <div id="divAdmin">
 	<h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
   <!-- 比赛 -->
-  <fieldset id="sendFiles">
-		<legend>比赛</legend>
+  <fieldset id="timer">
+		<legend>计时器</legend>
     <form action="/timer">
       <input type="checkbox" id="durationLimit" name="durationLimit" />
       <label for="durationLimit">限制时间(分钟)</label>
       <input type="number" id="timeDuration" name="timeDuration" min="1" max="300" value="240" />
-      {{if .IsStarted}}<input class="btn" type="submit" formmethod="post" value="结束比赛" />{{else}}<input class="btn" type="submit" formmethod="get" value="开始比赛" />{{end}}
+      {{if .IsStarted}}<input class="btn" type="submit" formmethod="get" value="结束比赛" />{{else}}<input class="btn" type="submit" formmethod="post" value="开始比赛" />{{end}}
       <script type="text/javascript">
         const dlcb = document.querySelector("#durationLimit");
         const tdov = document.querySelector("#timeDuration");
@@ -38,6 +38,11 @@
         });
       </script>
     </form>
+    </fieldset>
+    <fieldset id="user">
+		<legend>用户</legend>
+    <button type="button" class="btn" onclick="javascript:window.location.href='/reg'">注册用户</button>
+    <button type="button" class="btn" onclick="javascript:window.open('/listUser')">管理用户</button>
 	</fieldset>
   <!-- 文件 -->
 	<fieldset id="sendFiles" style="border-color: red; border-style: solid;">

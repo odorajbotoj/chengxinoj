@@ -5,20 +5,25 @@ import (
 )
 
 type PageData struct {
-	Title     string
-	Name      string
-	Version   string
-	IsLogin   bool
-	IsAdmin   bool
+	Title   string
+	Version string
+	UserData
 	IsStarted bool
 	IsReg     bool
 	IsRk      bool
 	StartTime int64
 	Duration  int64
 	SendFiles map[string]int64
+	Users     []string
 }
 
-func getPageData(r *http.Request) PageData {
+type UserData struct {
+	Name    string
+	IsLogin bool
+	IsAdmin bool
+}
+
+func getPageData(r *http.Request, ud UserData) PageData {
 	var pd PageData
 	pd.Title = cfg.Title
 	pd.Version = VERSION
@@ -27,8 +32,13 @@ func getPageData(r *http.Request) PageData {
 	pd.StartTime = startTime
 	pd.Duration = duration
 	gvm.RUnlock()
-	pd.SendFiles = getFileList("send/")
+	pd.UserData = ud
 
-	pd.Name, pd.IsLogin, pd.IsAdmin = checkUser(r)
+	if pd.IsLogin {
+		pd.SendFiles = getFileList("send/")
+	}
+	if pd.IsAdmin {
+		pd.Users = getUserList()
+	}
 	return pd
 }

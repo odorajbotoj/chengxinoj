@@ -67,7 +67,5 @@ function checkReg(){
 		alert("非法用户名！");
 	}
 	name.disabled = false;
-	passwd.disabled = false;
-	confirm.disabled = false;
 	return false;
 }

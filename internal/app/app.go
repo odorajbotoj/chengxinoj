@@ -1,42 +1,103 @@
 package app
 
 import (
+	"context"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
 
 	"github.com/tidwall/buntdb"
 )
 
+// 数据库
+var udb *buntdb.DB
+
+// waitgroup
+var wg sync.WaitGroup
+
+// 终止信号用channel
+var (
+	signalListener = make(chan os.Signal)
+	stopSignal     = make(chan struct{})
+)
+
+// stop信号广播
+func sl() {
+	<-signalListener
+	close(signalListener)
+	close(stopSignal)
+	log.Println("正在停止服务")
+	wg.Done()
+	return
+}
 func Run() {
+	// 监听终止信号
+	signal.Notify(signalListener, os.Interrupt)
+	wg.Add(3)
+	go sl()
+
 	// 数据库
 	var err error
-	db, err = buntdb.Open("db/data.db")
+	udb, err = buntdb.Open("db/data.db")
 	if err != nil {
 		elog.Fatalln(err)
 	}
-	defer db.Close()
-	db.Update(func(tx *buntdb.Tx) error {
-		tx.Set("user:admin:passwdMd5", cfg.AdminPasswdMD5, nil)
+	defer udb.Close()
+	err = udb.Update(func(tx *buntdb.Tx) error {
+		_, _, e := tx.Set("user:admin:passwdMd5", cfg.AdminPasswdMD5, nil)
+		if e != nil {
+			return e
+		}
+		_, _, e = tx.Set("user:admin:name", "admin", nil)
+		if e != nil {
+			return e
+		}
 		return nil
 	})
+	if err != nil {
+		elog.Fatalln(err)
+	}
+	udb.CreateIndex("name", "user:*:name", buntdb.IndexString)
 
 	// 服务器建立
-
-	// 静态资源
-	http.Handle("/static/", http.FileServer(http.FS(scriptsFs)))
 
 	// 启动计时器
 	go timer()
 
 	// 注册路由
-	http.HandleFunc("/", fIndex)            // 根页面，用户主页面
-	http.HandleFunc("/reg", fReg)           // 注册页面
-	http.HandleFunc("/login", fLogin)       // 登录页面
-	http.HandleFunc("/exit", fExit)         // 退出登录
-	http.HandleFunc("/getSend", fGetSend)   // 下载下发的文件
-	http.HandleFunc("/delSend", fDelSend)   // 删除下发的文件
-	http.HandleFunc("/upldSend", fUpldSend) // 上传要下发的文件
-	// http.HandleFunc("/commit", fCommit)     // 用户提交
-	http.HandleFunc("/timer", fTimer) // 计时器
-	// http.HandleFunc("/rk", fRk) // 排行榜
-	elog.Fatalln(http.ListenAndServe(cfg.Port, nil))
+	mux := http.NewServeMux()
+	mux.Handle("/static/", http.FileServer(http.FS(scriptsFs))) // 静态资源
+	mux.HandleFunc("/", fIndex)                                 // 根页面，用户主页面
+	mux.HandleFunc("/reg", fReg)                                // 注册页面
+	mux.HandleFunc("/login", fLogin)                            // 登录页面
+	mux.HandleFunc("/exit", fExit)                              // 退出登录
+	mux.HandleFunc("/getSend", fGetSend)                        // 下载下发的文件
+	mux.HandleFunc("/delSend", fDelSend)                        // 删除下发的文件
+	mux.HandleFunc("/upldSend", fUpldSend)                      // 上传要下发的文件
+	mux.HandleFunc("/timer", fTimer)                            // 计时器
+	mux.HandleFunc("/listUser", fListUser)                      // 用户列表
+	mux.HandleFunc("/delUser", fDelUser)                        // 删除用户
+	mux.HandleFunc("/impUser", fImpUser)                        // 导入用户
+	mux.HandleFunc("/expUser", fExpUser)                        // 导出用户
+	// mux.HandleFunc("/submit", fSubmit)     // 用户提交
+	// mux.HandleFunc("/rk", fRk) // 排行榜
+	var srv = new(http.Server)
+	srv.Addr = cfg.Port
+	srv.Handler = mux
+	go func() {
+		<-stopSignal
+		if err := srv.Shutdown(context.Background()); err != nil {
+			// Error from closing listeners, or context timeout:
+			elog.Printf("HTTP server Shutdown: %v\n", err)
+		}
+		log.Println("网页服务已停止")
+		wg.Done()
+	}()
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		// Error starting or closing listener:
+		elog.Fatalf("HTTP server ListenAndServe: %v\n", err)
+	}
+	wg.Wait()
 }

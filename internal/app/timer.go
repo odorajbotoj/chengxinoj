@@ -14,51 +14,65 @@ var (
 
 func timer() {
 	for {
-		t := <-timerStart
-		log.Println("比赛开始")
-		gvm.Lock()
-		isStarted = true
-		startTime = time.Now().UnixMilli()
-		duration = t * 60
-		gvm.Unlock()
-		if t <= 0 {
-			// 阻塞直到取消
-			<-timerEnd
+		select {
+		case t := <-timerStart:
+			log.Println("比赛开始")
 			gvm.Lock()
-			isStarted = false
-			startTime = 0
-			duration = 0
+			isStarted = true
+			startTime = time.Now().UnixMilli()
+			duration = t * 60
 			gvm.Unlock()
-			log.Println("比赛结束")
-		} else {
-			select {
-			// 等待取消或超时
-			case <-timerEnd:
+			if t <= 0 {
+				// 阻塞直到取消
+				<-timerEnd
 				gvm.Lock()
 				isStarted = false
 				startTime = 0
 				duration = 0
 				gvm.Unlock()
 				log.Println("比赛结束")
-			case <-time.After(time.Duration(t) * time.Minute):
-				gvm.Lock()
-				isStarted = false
-				startTime = 0
-				duration = 0
-				gvm.Unlock()
-				log.Println("比赛结束")
+			} else {
+				select {
+				// 等待取消或超时
+				case <-timerEnd:
+					gvm.Lock()
+					isStarted = false
+					startTime = 0
+					duration = 0
+					gvm.Unlock()
+					log.Println("比赛结束")
+				case <-time.After(time.Duration(t) * time.Minute):
+					gvm.Lock()
+					isStarted = false
+					startTime = 0
+					duration = 0
+					gvm.Unlock()
+					log.Println("比赛结束")
+				}
 			}
+		case <-stopSignal:
+			log.Println("计时器已停止")
+			wg.Done()
+			return
 		}
 	}
 }
 
 func fTimer(w http.ResponseWriter, r *http.Request) {
-	name, isLogin, isAdmin := checkUser(r)
-	if name == "admin" && isLogin && isAdmin {
-		if r.Method == "GET" && !isStarted {
-			dl := r.URL.Query().Get("durationLimit")
-			td := r.URL.Query().Get("timeDuration")
+	ud, out := checkUser(r)
+	if out {
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+		return
+	}
+	if ud.Name == "admin" && ud.IsLogin && ud.IsAdmin {
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if r.Method == "POST" && !iss {
+			r.ParseForm()
+			dl := r.Form.Get("durationLimit")
 			if dl == "on" {
+				td := r.Form.Get("timeDuration")
 				t, err := strconv.ParseInt(td, 10, 64)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -68,11 +82,11 @@ func fTimer(w http.ResponseWriter, r *http.Request) {
 			} else {
 				timerStart <- -1
 			}
-		} else if r.Method == "POST" && isStarted {
+		} else if r.Method == "GET" && isStarted {
 			timerEnd <- 0
 		}
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
-		http.Redirect(w, r, "/", http.StatusBadRequest)
+		http.Error(w, "403 Forbidden", http.StatusForbidden)
 	}
 }

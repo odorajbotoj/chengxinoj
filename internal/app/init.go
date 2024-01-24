@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-
-	"github.com/tidwall/buntdb"
 )
 
 const (
@@ -23,6 +21,8 @@ var (
 	isStarted bool = false
 	// 是否允许注册
 	canReg bool = true
+	// 是否允许提交
+	canSubmit bool = true
 	// 比赛开始时间
 	startTime int64 = 0
 	// 比赛延续时间
@@ -43,14 +43,14 @@ var USERREGHTML string
 //go:embed static/html/login.html
 var LOGINHTML string
 
+//go:embed static/html/user.html
+var USERLISTHTML string
+
 //go:embed static/scripts
 var scriptsFs embed.FS
 
 // 全局设置
 var cfg Config
-
-// 数据库
-var db *buntdb.DB
 
 // 专用输出错误信息
 var elog *log.Logger
@@ -100,4 +100,5 @@ func Init() {
 	INDEXHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", INDEXHTML, 1)
 	USERREGHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERREGHTML, 1)
 	LOGINHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", LOGINHTML, 1)
+	USERLISTHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERLISTHTML, 1)
 }

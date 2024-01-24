@@ -1,0 +1,31 @@
+{{if .IsLogin}}
+{{if .IsAdmin}}
+<form method="post" id="userAction">
+<fieldset>
+<legend>用户列表</legend>
+<div>
+<input type="file" id="file" name="file" form="userUpld" />
+<input class="btn" type="submit" formaction="/impUser" form="userUpld" value="导入用户" />
+<input class="btn" type="submit" formaction="/expUser" value="导出选中" />
+<input class="btn" type="submit" formaction="/delUser" value="删除选中" />
+</div>
+<ul>
+<li>注意：上传文件应不大于100MB。新数据会与旧数据合并，相同名称用户数据以新的为准。</li>
+{{range $name := .Users}}
+<li>
+<input type="checkbox" id="{{$name}}" name="uname" value="{{$name}}" />
+<label for="{{$name}}">{{$name}}</label>
+</li>
+{{else}}
+<li>没有用户</li>
+{{end}}
+</ul>
+</fieldset>
+</form>
+<form method="post" action="/upldSend" id="userUpld" enctype="multipart/form-data"></form>
+{{else}}
+<script type="text/javascript">alert("权限不足");window.location.replace("/");</script>
+{{end}}
+{{else}}
+<script type="text/javascript">alert("请先登录");window.location.replace("/");</script>
+{{end}}
