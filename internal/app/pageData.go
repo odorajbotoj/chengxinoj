@@ -11,6 +11,8 @@ type PageData struct {
 	IsStarted bool
 	IsReg     bool
 	IsRk      bool
+	CanReg    bool
+	CanSubmit bool
 	StartTime int64
 	Duration  int64
 	SendFiles map[string]int64
@@ -31,6 +33,8 @@ func getPageData(r *http.Request, ud UserData) PageData {
 	pd.IsStarted = isStarted
 	pd.StartTime = startTime
 	pd.Duration = duration
+	pd.CanReg = canReg
+	pd.CanSubmit = canSubmit
 	gvm.RUnlock()
 	pd.UserData = ud
 

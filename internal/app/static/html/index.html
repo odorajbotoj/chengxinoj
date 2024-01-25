@@ -1,13 +1,13 @@
 {{if .IsLogin}}
 <p>您好，{{.Name}}！ <a href="/exit" onclick="return confirm('确认退出登录?');">[退出登录]</a></p>
 {{if .IsAdmin}}
-  {{template "tAdmin" .}}
+{{template "tAdmin" .}}
 {{else}}
-  {{if .IsStarted}}
-	{{template "tUser" .}}
-  {{else}}
-    <ul><li>请等待比赛开始</li></ul>
-  {{end}}
+{{if .IsStarted}}
+{{template "tUser" .}}
+{{else}}
+<ul><li>请等待比赛开始</li></ul>
+{{end}}
 {{end}}
 {{else}}
 <p style="display: inline-block;">请先</p><a href="/login">登录</a><p style="display: inline-block;">或</p><a href="/reg">注册</a>
@@ -15,10 +15,10 @@
 
 {{define "tAdmin"}}
 <div id="divAdmin">
-	<h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
+  <h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
   <!-- 比赛 -->
   <fieldset id="timer">
-		<legend>计时器</legend>
+    <legend>计时器</legend>
     <form action="/timer">
       <input type="checkbox" id="durationLimit" name="durationLimit" />
       <label for="durationLimit">限制时间(分钟)</label>
@@ -40,45 +40,109 @@
     </form>
     </fieldset>
     <fieldset id="user">
-		<legend>用户</legend>
+    <legend>用户</legend>
     <button type="button" class="btn" onclick="javascript:window.location.href='/reg'">注册用户</button>
     <button type="button" class="btn" onclick="javascript:window.open('/listUser')">管理用户</button>
-	</fieldset>
+    <form action="/canReg" method="get" style="display: inline-block;">
+    {{if .CanReg}}<input type="hidden" id="action" name="action" value="off" /><input class="btn" type="submit" value="禁用注册" />{{else}}<input type="hidden" id="action" name="action" value="on" /><input class="btn" type="submit" value="启用注册" />{{end}}
+    </form>
+  </fieldset>
   <!-- 文件 -->
-	<fieldset id="sendFiles" style="border-color: red; border-style: solid;">
-		<legend style="background-color: red; color: white;">文件</legend>
-    <ul>
-		{{range $name,$size := .SendFiles}}
-		  	<li><a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)&nbsp;&nbsp;&nbsp;&nbsp;<a href="delSend?fn={{$name}}" onclick="return confirm('确认删除 {{$name}} ?');">[删除]</a></li>
-	  	{{else}}
-	  		<li>没有文件</li>
-	  	{{end}}
-	  	<hr />
-	  	<li>
-	  		<form method="post" action="/upldSend" enctype="multipart/form-data">
-	  			<div>
-	  				<label>单次上传文件大小总和不得大于100MB</label>
-	  			</div>
-	  			<input type="file" id="file" name="file" multiple />
-	  			<input type="submit" class="btn" value="上传" />
-	  		</form>
-	  	</li>
+  <fieldset id="contest">
+  <legend>比赛</legend>
+  <button type="button" class="btn" onclick="javascript:window.location.href='/reg'">导入比赛</button>
+  <button type="button" class="btn" onclick="javascript:window.open('/listUser')">导出比赛</button>
+  <form action="/canSubmit" method="get" style="display: inline-block;">
+  {{if .CanSubmit}}<input type="hidden" id="action" name="action" value="off" /><input class="btn" type="submit" value="禁止提交" />{{else}}<input type="hidden" id="action" name="action" value="on" /><input class="btn" type="submit" value="开放提交" />{{end}}
+  </form><!--
+  <fieldset id="sendFiles">
+    <legend>文件</legend>
+        <form method="post" action="/upldSend" enctype="multipart/form-data">
+          <input type="file" id="file" name="file" multiple />
+          <input type="submit" class="btn" value="上传" />
+        </form>
+        <p>单次上传文件大小总和不得大于100MB</p>
+      <ul>
+    {{range $name,$size := .SendFiles}}
+        <li><a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)&nbsp;&nbsp;&nbsp;&nbsp;<a href="delSend?fn={{$name}}" onclick="return confirm('确认删除 {{$name}} ?');">[删除]</a></li>
+      {{else}}
+        <li>没有文件</li>
+      {{end}}
     </ul>
-	</fieldset>
+  </fieldset>-->
+  
+  
+<form method="post">
+<fieldset id="sendFiles">
+<legend>下发文件</legend>
+<div>
+<input type="file" id="file" name="file" form="fileUpld" multiple />
+<input class="btn" type="submit" formaction="/upldSend" form="fileUpld" value="上传文件" />
+<input class="btn" type="submit" formaction="/delSend" value="删除选中" onclick="return confirm('确认删除？');" />
+</div>
+<p>注意：单次上传文件大小总和应不大于100MB。新同名文件会直接覆盖旧文件。</p>
+<script type="text/javascript">
+// 代码来源于网络
+function funcAll(){
+  var selectAll = document.getElementById("selectAll");
+  var selectOnes = document.getElementsByClassName("selectOne");
+  for (var i = 0; i < selectOnes.length; i++) { //循环遍历，把全选框的值赋给每个单选框
+    selectOnes[i].checked = selectAll.checked;
+  }
+}
+function funcOne(){
+  var selectAll = document.getElementById("selectAll"); //函数作用域，所以得再定义一遍
+  var selectOnes = document.getElementsByClassName("selectOne");
+  var isAllChecked = true; //定义一个变量作为桥梁来控制全选按钮
+  for (var i = 0; i < selectOnes.length; i++) {
+    if (selectOnes[i].checked === false) {
+      isAllChecked = false;
+      break;
+    }
+  }
+  selectAll.checked = isAllChecked;
+}
+</script>
+<ul>
+<li>
+<input type="checkbox" id="selectAll" name="selectAll" value="selectAll" onclick="funcAll();" />
+<label for="selectAll">全选/全不选</label>
+</li>
+{{range $name, $size := .SendFiles}}
+<li>
+<input type="checkbox" id="{{$name}}" name="fname" value="{{$name}}" class="selectOne" onclick="funcOne();"/>
+<a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)
+</li>
+{{else}}
+<li>没有文件</li>
+{{end}}
+</ul>
+</fieldset>
+</form>
+
+
+<form method="post" action="/upldSend" id="fileUpld" enctype="multipart/form-data"></form>
+  <fieldset id="tasks">
+  <legend>任务点</legend>
+  </fieldset>
+  <fieldset id="rk">
+  <legend>排行榜</legend>
+  </fieldset>
+  </fieldset>
 </div>
 {{end}}
 
 {{define "tUser"}}
 <div id="divUser">
-	<fieldset id="sendFiles" style="border-color: red; border-style: solid;">
-		<legend style="background-color: red; color: white;">文件</legend>
+  <fieldset id="sendFiles" style="border-color: red; border-style: solid;">
+    <legend style="background-color: red; color: white;">文件</legend>
     <ul>
-		  {{range $name,$size := .SendFiles}}
-		  	<li><a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)</li>
-		  {{else}}
-		  	<li>没有文件</li>
-		  {{end}}
+      {{range $name,$size := .SendFiles}}
+        <li><a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)</li>
+      {{else}}
+        <li>没有文件</li>
+      {{end}}
     </ul>
-	</fieldset>
+  </fieldset>
 </div>
 {{end}}

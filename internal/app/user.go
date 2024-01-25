@@ -51,8 +51,8 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，表单为空");window.location.replace("/reg");</script>`))
 			return
 		}
-		// 过滤非法注册admin
-		if r.Form["userRegName"][0] == "admin" {
+		// 过滤非法注册、注册admin
+		if r.Form["userRegName"][0] == "admin" || !goodUserName.MatchString(r.Form["userRegName"][0]) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，非法用户名");window.location.replace("/reg");</script>`))
 			return
 		}
@@ -258,6 +258,7 @@ func checkUser(r *http.Request) (UserData, bool) {
 	}
 	var t string = ""
 	err = udb.View(func(tx *buntdb.Tx) error {
+		var e error
 		t, e = tx.Get("user:" + ud.Name + ":token")
 		return e
 	})
@@ -282,7 +283,9 @@ func getUserList() []string {
 	s := make([]string, 0)
 	err := udb.View(func(tx *buntdb.Tx) error {
 		e := tx.Ascend("name", func(key, value string) bool {
-			s = append(s, value)
+			if value != "admin" {
+				s = append(s, value)
+			}
 			return true // continue iteration
 		})
 		return e
@@ -301,7 +304,11 @@ func fListUser(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
 			return
 		}
-		if ud.IsLogin && !ud.IsAdmin {
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		if !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
@@ -325,6 +332,7 @@ func fListUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 删除用户
 func fDelUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		ud, out := checkUser(r)
@@ -332,7 +340,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
 			return
 		}
-		if ud.IsLogin && !ud.IsAdmin {
+		if !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
@@ -350,7 +358,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 				if len(ss) != 3 {
 					return true
 				}
-				if in(ss[1], lst) {
+				if ss[1] != "admin" && in(ss[1], lst) {
 					s = append(s, key)
 				}
 				return true // continue iteration
@@ -433,6 +441,9 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 		// 放进data库
 		err = udb.Update(func(tx *buntdb.Tx) error {
 			for k, v := range kv {
+				if k == "user:admin:passwdMd5" || k == "user:admin:token" {
+					continue
+				}
 				_, _, e := tx.Set(k, v, nil)
 				if err != nil {
 					return e
@@ -461,14 +472,7 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
 			return
 		}
-		if !ud.IsLogin {
-			http.Error(w, "403 Forbidden", http.StatusForbidden)
-			return
-		}
-		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if !iss && !ud.IsAdmin {
+		if !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
@@ -496,7 +500,7 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 				if len(ss) != 3 {
 					return true
 				}
-				if in(ss[1], lst) {
+				if ss[1] != "admin" && in(ss[1], lst) {
 					kv[key] = value
 				}
 				return true // continue iteration
@@ -533,6 +537,44 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", http.DetectContentType(buf.Bytes()))
 		w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
 		w.Write(buf.Bytes())
+		return
+	} else {
+		//400
+		http.Error(w, "400 Bad Request", http.StatusBadRequest)
+		return
+	}
+}
+
+func fCanReg(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		ud, out := checkUser(r)
+		if out {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		if !ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			return
+		}
+		var action = r.URL.Query().Get("action")
+		if action == "on" {
+			gvm.Lock()
+			canReg = true
+			gvm.Unlock()
+		} else if action == "off" {
+			gvm.Lock()
+			canReg = false
+			gvm.Unlock()
+		} else {
+			//400
+			http.Error(w, "400 Bad Request", http.StatusBadRequest)
+			return
+		}
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	} else {
 		//400

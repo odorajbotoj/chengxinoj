@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -20,7 +21,7 @@ var (
 	// 是否开始比赛
 	isStarted bool = false
 	// 是否允许注册
-	canReg bool = true
+	canReg bool = false
 	// 是否允许提交
 	canSubmit bool = true
 	// 比赛开始时间
@@ -55,6 +56,9 @@ var cfg Config
 // 专用输出错误信息
 var elog *log.Logger
 
+// 正则
+var goodUserName *regexp.Regexp
+
 func Init() {
 	// 新建elog, 专用输出错误信息
 	eLogFile, err := os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE, 0755)
@@ -62,6 +66,9 @@ func Init() {
 		log.Fatalln("Init: cannot create log file: ", err)
 	}
 	elog = log.New(io.MultiWriter(eLogFile, os.Stdout), "[ERR] ", log.Ldate|log.Lmicroseconds|log.Lshortfile)
+
+	// 编译正则
+	goodUserName = regexp.MustCompile("^[\u4E00-\u9FA5A-Za-z0-9_]{2,20}$")
 
 	// 检查配置文件
 	err = checkConfig()
@@ -91,7 +98,7 @@ func Init() {
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
-	err = checkDir("prob/")
+	err = checkDir("task/")
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}

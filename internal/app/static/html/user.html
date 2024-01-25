@@ -1,19 +1,45 @@
 {{if .IsLogin}}
 {{if .IsAdmin}}
-<form method="post" id="userAction">
-<fieldset>
+<form method="post">
+<fieldset id="userAction">
 <legend>用户列表</legend>
 <div>
 <input type="file" id="file" name="file" form="userUpld" />
 <input class="btn" type="submit" formaction="/impUser" form="userUpld" value="导入用户" />
 <input class="btn" type="submit" formaction="/expUser" value="导出选中" />
-<input class="btn" type="submit" formaction="/delUser" value="删除选中" />
+<input class="btn" type="submit" formaction="/delUser" value="删除选中" onclick="return confirm('确认删除？');" />
 </div>
+<p>注意：上传数据文件应不大于100MB。新数据会与旧数据合并，相同名称用户数据以新的为准。</p>
+<script type="text/javascript">
+// 代码来源于网络
+function funcAll(){
+  var selectAll = document.getElementById("selectAll");
+  var selectOnes = document.getElementsByClassName("selectOne");
+  for (var i = 0; i < selectOnes.length; i++) { //循环遍历，把全选框的值赋给每个单选框
+    selectOnes[i].checked = selectAll.checked;
+  }
+}
+function funcOne(){
+  var selectAll = document.getElementById("selectAll"); //函数作用域，所以得再定义一遍
+  var selectOnes = document.getElementsByClassName("selectOne");
+  var isAllChecked = true; //定义一个变量作为桥梁来控制全选按钮
+  for (var i = 0; i < selectOnes.length; i++) {
+    if (selectOnes[i].checked === false) {
+      isAllChecked = false;
+      break;
+    }
+  }
+  selectAll.checked = isAllChecked;
+}
+</script>
 <ul>
-<li>注意：上传文件应不大于100MB。新数据会与旧数据合并，相同名称用户数据以新的为准。</li>
+<li>
+<input type="checkbox" id="selectAll" name="selectAll" value="selectAll" onclick="funcAll();" />
+<label for="selectAll">全选/全不选</label>
+</li>
 {{range $name := .Users}}
 <li>
-<input type="checkbox" id="{{$name}}" name="uname" value="{{$name}}" />
+<input type="checkbox" id="{{$name}}" name="uname" value="{{$name}}" class="selectOne" onclick="funcOne();"/>
 <label for="{{$name}}">{{$name}}</label>
 </li>
 {{else}}

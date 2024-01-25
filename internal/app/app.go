@@ -77,6 +77,7 @@ func Run() {
 	mux.HandleFunc("/delSend", fDelSend)                        // 删除下发的文件
 	mux.HandleFunc("/upldSend", fUpldSend)                      // 上传要下发的文件
 	mux.HandleFunc("/timer", fTimer)                            // 计时器
+	mux.HandleFunc("/canReg", fCanReg)                          // 注册开关
 	mux.HandleFunc("/listUser", fListUser)                      // 用户列表
 	mux.HandleFunc("/delUser", fDelUser)                        // 删除用户
 	mux.HandleFunc("/impUser", fImpUser)                        // 导入用户

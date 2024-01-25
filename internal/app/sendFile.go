@@ -93,7 +93,7 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 		}
 		files, ok := r.MultipartForm.File["file"]
 		if !ok { // 出错则取消
-			http.Error(w, "未知错误，请重试", http.StatusBadRequest)
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误（可能提交了空的表单）");window.location.replace("/listUser");</script>`))
 			return
 		}
 		for _, f := range files {

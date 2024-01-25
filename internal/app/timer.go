@@ -24,13 +24,20 @@ func timer() {
 			gvm.Unlock()
 			if t <= 0 {
 				// 阻塞直到取消
-				<-timerEnd
-				gvm.Lock()
-				isStarted = false
-				startTime = 0
-				duration = 0
-				gvm.Unlock()
-				log.Println("比赛结束")
+				select {
+				case <-timerEnd:
+					gvm.Lock()
+					isStarted = false
+					startTime = 0
+					duration = 0
+					canSubmit = false
+					gvm.Unlock()
+					log.Println("比赛结束")
+				case <-stopSignal:
+					log.Println("计时器已停止")
+					wg.Done()
+					return
+				}
 			} else {
 				select {
 				// 等待取消或超时
@@ -39,6 +46,7 @@ func timer() {
 					isStarted = false
 					startTime = 0
 					duration = 0
+					canSubmit = false
 					gvm.Unlock()
 					log.Println("比赛结束")
 				case <-time.After(time.Duration(t) * time.Minute):
@@ -46,8 +54,13 @@ func timer() {
 					isStarted = false
 					startTime = 0
 					duration = 0
+					canSubmit = false
 					gvm.Unlock()
 					log.Println("比赛结束")
+				case <-stopSignal:
+					log.Println("计时器已停止")
+					wg.Done()
+					return
 				}
 			}
 		case <-stopSignal:
@@ -77,6 +90,9 @@ func fTimer(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
+				} else if t > 300 {
+					http.Error(w, "400 Bad Request", http.StatusBadRequest)
+					return
 				}
 				timerStart <- t
 			} else {
@@ -88,5 +104,6 @@ func fTimer(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
 		http.Error(w, "403 Forbidden", http.StatusForbidden)
+		return
 	}
 }
