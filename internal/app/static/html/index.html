@@ -15,84 +15,21 @@
 
 {{define "tAdmin"}}
 <div id="divAdmin">
-  <h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
-  <!-- 比赛 -->
-  <fieldset id="timer">
-    <legend>计时器</legend>
-    <form action="/timer">
-      <input type="checkbox" id="durationLimit" name="durationLimit" />
-      <label for="durationLimit">限制时间(分钟)</label>
-      <input type="number" id="timeDuration" name="timeDuration" min="1" max="300" value="240" />
-      {{if .IsStarted}}<input class="btn" type="submit" formmethod="get" value="结束比赛" />{{else}}<input class="btn" type="submit" formmethod="post" value="开始比赛" />{{end}}
-      <script type="text/javascript">
-        const dlcb = document.querySelector("#durationLimit");
-        const tdov = document.querySelector("#timeDuration");
-        tdov.style.visibility = "hidden";
-        dlcb.addEventListener("change", () => {
-          if (dlcb.checked) {
-            tdov.style.visibility = "visible";
-            tdov.value = "240";
-          } else {
-            tdov.style.visibility = "hidden";
-          }
-        });
-      </script>
-    </form>
-    </fieldset>
-    <fieldset id="user">
-    <legend>用户</legend>
-    <button type="button" class="btn" onclick="javascript:window.location.href='/reg'">注册用户</button>
-    <button type="button" class="btn" onclick="javascript:window.open('/listUser')">管理用户</button>
-    <form action="/canReg" method="get" style="display: inline-block;">
-    {{if .CanReg}}<input type="hidden" id="action" name="action" value="off" /><input class="btn" type="submit" value="禁用注册" />{{else}}<input type="hidden" id="action" name="action" value="on" /><input class="btn" type="submit" value="启用注册" />{{end}}
-    </form>
-  </fieldset>
-  <!-- 文件 -->
-  <fieldset id="contest">
-  <legend>比赛</legend>
-  <button type="button" class="btn" onclick="javascript:window.location.href='/reg'">导入比赛</button>
-  <button type="button" class="btn" onclick="javascript:window.open('/listUser')">导出比赛</button>
-  <form action="/canSubmit" method="get" style="display: inline-block;">
-  {{if .CanSubmit}}<input type="hidden" id="action" name="action" value="off" /><input class="btn" type="submit" value="禁止提交" />{{else}}<input type="hidden" id="action" name="action" value="on" /><input class="btn" type="submit" value="开放提交" />{{end}}
-  </form><!--
-  <fieldset id="sendFiles">
-    <legend>文件</legend>
-        <form method="post" action="/upldSend" enctype="multipart/form-data">
-          <input type="file" id="file" name="file" multiple />
-          <input type="submit" class="btn" value="上传" />
-        </form>
-        <p>单次上传文件大小总和不得大于100MB</p>
-      <ul>
-    {{range $name,$size := .SendFiles}}
-        <li><a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)&nbsp;&nbsp;&nbsp;&nbsp;<a href="delSend?fn={{$name}}" onclick="return confirm('确认删除 {{$name}} ?');">[删除]</a></li>
-      {{else}}
-        <li>没有文件</li>
-      {{end}}
-    </ul>
-  </fieldset>-->
-  
-  
-<form method="post">
-<fieldset id="sendFiles">
-<legend>下发文件</legend>
-<div>
-<input type="file" id="file" name="file" form="fileUpld" multiple />
-<input class="btn" type="submit" formaction="/upldSend" form="fileUpld" value="上传文件" />
-<input class="btn" type="submit" formaction="/delSend" value="删除选中" onclick="return confirm('确认删除？');" />
-</div>
-<p>注意：单次上传文件大小总和应不大于100MB。新同名文件会直接覆盖旧文件。</p>
+<h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
+
+<!-- 全选/全不选 -->
 <script type="text/javascript">
 // 代码来源于网络
-function funcAll(){
-  var selectAll = document.getElementById("selectAll");
-  var selectOnes = document.getElementsByClassName("selectOne");
+function funcAll(aname, oname){
+  var selectAll = document.getElementById(aname);
+  var selectOnes = document.getElementsByClassName(oname);
   for (var i = 0; i < selectOnes.length; i++) { //循环遍历，把全选框的值赋给每个单选框
     selectOnes[i].checked = selectAll.checked;
   }
 }
-function funcOne(){
-  var selectAll = document.getElementById("selectAll"); //函数作用域，所以得再定义一遍
-  var selectOnes = document.getElementsByClassName("selectOne");
+function funcOne(aname, oname){
+  var selectAll = document.getElementById(aname); //函数作用域，所以得再定义一遍
+  var selectOnes = document.getElementsByClassName(oname);
   var isAllChecked = true; //定义一个变量作为桥梁来控制全选按钮
   for (var i = 0; i < selectOnes.length; i++) {
     if (selectOnes[i].checked === false) {
@@ -103,32 +40,121 @@ function funcOne(){
   selectAll.checked = isAllChecked;
 }
 </script>
+
+<!-- 用户 -->
+<fieldset id="user">
+<legend>用户</legend>
+<button type="button" class="btn" onclick="javascript:window.location.href='/reg'">注册用户</button>
+<button type="button" class="btn" onclick="javascript:window.open('/listUser')">管理用户</button>
+<form action="/canReg" method="get" style="display: inline-block;">
+{{if .CanReg}}<input type="hidden" id="action" name="action" value="off" /><input class="btn" type="submit" value="禁用注册" />{{else}}<input type="hidden" id="action" name="action" value="on" /><input class="btn" type="submit" value="启用注册" />{{end}}
+</form>
+</fieldset>
+
+<!-- 比赛 -->
+<fieldset id="contest">
+<legend>比赛</legend>
+
+<!-- 比赛设置 -->
+<fieldset id="contestCfg">
+<legend>基本</legend>
+<form action="/impContest" method="post" enctype="multipart/form-data" style="display: inline-block;">
+<input type="file" id="file" name="file" />
+<input class="btn" type="submit" value="导入比赛" />
+</form>
+<form action="/expContest" method="get" target="_blank" style="display: inline-block;">
+<input class="btn" type="submit" value="导出比赛" />
+</form>
+</fieldset>
+
+<!-- 计时器 -->
+<fieldset id="timer">
+<legend>计时器</legend>
+<form action="/timer">
+<input type="checkbox" id="durationLimit" name="durationLimit" />
+<label for="durationLimit">限制时间(分钟)</label>
+<input type="number" id="timeDuration" name="timeDuration" min="1" max="300" value="240" />
+{{if .IsStarted}}<input class="btn" type="submit" formmethod="get" value="结束比赛" />{{else}}<input class="btn" type="submit" formmethod="post" value="开始比赛" />{{end}}
+<script type="text/javascript">
+const dlcb = document.querySelector("#durationLimit");
+const tdov = document.querySelector("#timeDuration");
+tdov.style.visibility = "hidden";
+dlcb.addEventListener("change", () => {
+  if (dlcb.checked) {
+    tdov.style.visibility = "visible";
+    tdov.value = "240";
+  } else {
+    tdov.style.visibility = "hidden";
+  }
+});
+</script>
+</form>
+</fieldset>
+
+<!-- 下发文件管理 -->
+<fieldset id="sendFiles">
+<legend>下发文件</legend>
+<form method="post">
+<div>
+<input type="file" id="file" name="file" form="fileUpld" multiple />
+<input class="btn" type="submit" formaction="/upldSend" form="fileUpld" value="上传文件" />
+<input class="btn" type="submit" formaction="/delSend" value="删除选中" onclick="return confirm('确认删除？');" />
+</div>
+<p>注意：单次上传文件大小总和应不大于100MB。新同名文件会直接覆盖旧文件。</p>
 <ul>
 <li>
-<input type="checkbox" id="selectAll" name="selectAll" value="selectAll" onclick="funcAll();" />
-<label for="selectAll">全选/全不选</label>
+<input type="checkbox" id="fileSA" name="fileSA" value="fileSA" onclick="funcAll('fileSA', 'fileSO');" />
+<label for="fileSA">全选/全不选</label>
 </li>
 {{range $name, $size := .SendFiles}}
 <li>
-<input type="checkbox" id="{{$name}}" name="fname" value="{{$name}}" class="selectOne" onclick="funcOne();"/>
+<input type="checkbox" id="{{$name}}" name="fname" value="{{$name}}" class="fileSO" onclick="funcOne('fileSA', 'fileSO');"/>
 <a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)
 </li>
 {{else}}
 <li>没有文件</li>
 {{end}}
 </ul>
-</fieldset>
 </form>
-
-
 <form method="post" action="/upldSend" id="fileUpld" enctype="multipart/form-data"></form>
-  <fieldset id="tasks">
-  <legend>任务点</legend>
-  </fieldset>
-  <fieldset id="rk">
-  <legend>排行榜</legend>
-  </fieldset>
-  </fieldset>
+</fieldset>
+
+<!-- 任务点管理 -->
+<fieldset id="tasks">
+<legend>任务点</legend>
+<form method="post">
+<div>
+<label for="ntname">名称（1～20字）：</label>
+<input type="text" id="ntname" name="ntname" form="newTask" required minlength="1" maxlength="20" size="20" />
+<input class="btn" type="submit" form="newTask" value="新建任务" />
+<input class="btn" type="submit" formaction="/delTask" value="删除选中" onclick="return confirm('确认删除？');" />
+{{if .CanSubmit}}<input type="hidden" id="action" name="action" value="off" form="setCanSubmit" /><input class="btn" type="submit" value="禁止提交" form="setCanSubmit" />{{else}}<input type="hidden" id="action" name="action" value="on" form="setCanSubmit" /><input class="btn" type="submit" value="开放提交" form="setCanSubmit" />{{end}}
+</div>
+<ul>
+<li>
+<input type="checkbox" id="taskSA" name="taskSA" value="taskSA" onclick="funcAll('taskSA', 'taskSO');" />
+<label for="taskSA">全选/全不选</label>
+</li>
+{{range $name := .TaskList}}
+<li>
+<input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>
+<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>&nbsp&nbsp<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>
+</li>
+{{else}}
+<li>没有任务点</li>
+{{end}}
+</ul>
+</form>
+<form method="get" action="/canSubmit" enctype="multipart/form-data" style="display: inline-block;" id="setCanSubmit"></form>
+<form id="newTask" method="get" action="/newTask"></form>
+</fieldset>
+
+<fieldset>
+<legend>榜单</legend>
+<button type="button" class="btn" onclick="javascript:window.open('/rk')">查看榜单</button>
+</fieldset>
+
+</fieldset>
 </div>
 {{end}}
 

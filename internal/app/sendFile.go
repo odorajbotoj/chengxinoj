@@ -2,6 +2,7 @@ package app
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -48,7 +49,7 @@ func fGetSend(w http.ResponseWriter, r *http.Request) {
 
 // 删除下发的文件
 func fDelSend(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	if r.Method == "POST" {
 		ud, out := checkUser(r)
 		if out {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
@@ -58,11 +59,18 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
-		fn := r.URL.Query().Get("fn")
-		if fn != "" {
+		r.ParseForm()
+		fns := r.Form["fname"]
+		if len(fns) == 0 {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：表单为空");window.location.replace("/");</script>`))
+			return
+		}
+		for _, fn := range fns {
 			err := os.Remove("send/" + fn)
 			if err != nil {
 				elog.Println("fDelSend: ", err)
+			} else {
+				log.Println("删除文件：" + fn)
 			}
 		}
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -93,7 +101,7 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 		}
 		files, ok := r.MultipartForm.File["file"]
 		if !ok { // 出错则取消
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误（可能提交了空的表单）");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误（可能提交了空的表单）");window.location.replace("/");</script>`))
 			return
 		}
 		for _, f := range files {
@@ -102,6 +110,8 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				elog.Println("fUpldSend: ", err)
 				continue
+			} else {
+				log.Println("上传文件：" + f.Filename)
 			}
 			defer fr.Close()
 			defer fo.Close()

@@ -22,7 +22,10 @@ func fIndex(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("无法渲染页面"))
 		return
 	}
-	err = tmpl.Execute(w, getPageData(r, ud))
+	pd := getPageData(ud)
+	pd.SendFiles = getFileList("send/")
+	pd.TaskList = getTaskList()
+	err = tmpl.Execute(w, pd)
 	if err != nil {
 		elog.Println(err)
 		w.Write([]byte("无法渲染页面"))

@@ -4,14 +4,23 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/tidwall/buntdb"
 )
+
+type User struct {
+	Name  string
+	Md5   string
+	Token string
+}
 
 func fReg(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
@@ -27,7 +36,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("无法渲染页面"))
 			return
 		}
-		err = tmpl.Execute(w, getPageData(r, ud))
+		err = tmpl.Execute(w, getPageData(ud))
 		if err != nil {
 			elog.Println(err)
 			w.Write([]byte("无法渲染页面"))
@@ -60,37 +69,37 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 		var err error
 		err = udb.View(func(tx *buntdb.Tx) error {
 			// 过滤重复注册
-			_, e := tx.Get("user:" + r.Form["userRegName"][0] + ":passwdMd5")
+			_, e := tx.Get("user:" + r.Form["userRegName"][0] + ":info")
 			return e
 		})
 		if err != nil {
 			if err == buntdb.ErrNotFound {
 				// 说明可以注册
-				/*
-					// 新建用户Data文件夹
-					ex, err := exists("recv/" + r.Form["userRegName"][0])
+				// 新建用户Data文件夹
+				ex, err := exists("recv/" + r.Form["userRegName"][0])
+				if err != nil {
+					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/");</script>`))
+					elog.Println(err)
+					return
+				}
+				if !ex {
+					err = os.Mkdir("recv/"+r.Form["userRegName"][0], 0755)
 					if err != nil {
 						w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/");</script>`))
 						elog.Println(err)
 						return
 					}
-					if !ex {
-						err = os.Mkdir("recv/"+r.Form["userRegName"][0], 0755)
-						if err != nil {
-							w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/");</script>`))
-							elog.Println(err)
-							return
-						}
-					}
-				*/
-				// 写入密码散列
-				// 写入用户名（方便索引）
+				}
+				// 写入用户数据
+				var u User
 				err = udb.Update(func(tx *buntdb.Tx) error {
-					_, _, e := tx.Set("user:"+r.Form["userRegName"][0]+":passwdMd5", r.Form["userRegMd5"][0], nil)
+					u.Name = r.Form["userRegName"][0]
+					u.Md5 = r.Form["userRegMd5"][0]
+					b, e := json.Marshal(u)
 					if e != nil {
 						return e
 					}
-					_, _, e = tx.Set("user:"+r.Form["userRegName"][0]+":name", r.Form["userRegName"][0], nil)
+					_, _, e = tx.Set("user:"+u.Name+":info", string(b), nil)
 					if e != nil {
 						return e
 					}
@@ -103,6 +112,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 				}
 				// success
 				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册成功");window.location.replace("/");</script>`))
+				log.Printf("用户 %s 注册\n", u.Name)
 				return
 			} else {
 				// 其他错误
@@ -136,7 +146,7 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("无法渲染页面"))
 			return
 		}
-		err = tmpl.Execute(w, getPageData(r, ud))
+		err = tmpl.Execute(w, getPageData(ud))
 		if err != nil {
 			elog.Println(err)
 			w.Write([]byte("无法渲染页面"))
@@ -151,10 +161,14 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		// 数据操作
 		var err error
-		var passwdMd5 string
+		var u User
 		err = udb.View(func(tx *buntdb.Tx) error {
 			var e error
-			passwdMd5, e = tx.Get("user:" + r.Form["loginName"][0] + ":passwdMd5")
+			s, e := tx.Get("user:" + r.Form["loginName"][0] + ":info")
+			if e != nil {
+				return e
+			}
+			e = json.Unmarshal([]byte(s), &u)
 			return e
 		})
 		if err != nil {
@@ -169,14 +183,19 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			// 若用户存在
-			if r.Form["loginMd5"][0] != passwdMd5 {
+			if r.Form["loginMd5"][0] != u.Md5 {
 				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("密码错误");window.location.replace("/login");</script>`))
 				return
 			} else {
-				sum := md5.Sum([]byte(r.Form["loginName"][0] + "_" + r.Form["loginMd5"][0] + "_" + getIP(r)))
+				sum := md5.Sum([]byte(u.Name + "_" + u.Md5 + "_" + getIP(r)))
 				token := hex.EncodeToString(sum[:])
+				u.Token = token
 				err = udb.Update(func(tx *buntdb.Tx) error {
-					_, _, e := tx.Set("user:"+r.Form["loginName"][0]+":token", token, nil)
+					b, e := json.Marshal(u)
+					if e != nil {
+						return e
+					}
+					_, _, e = tx.Set("user:"+u.Name+":info", string(b), nil)
 					return e
 				})
 				if err != nil {
@@ -187,7 +206,7 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 				// set cookies
 				c1 := http.Cookie{
 					Name:     "username",
-					Value:    url.QueryEscape(r.Form["loginName"][0]),
+					Value:    url.QueryEscape(u.Name),
 					MaxAge:   16200,
 					HttpOnly: true,
 					SameSite: http.SameSiteStrictMode,
@@ -201,7 +220,8 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 				}
 				http.SetCookie(w, &c1)
 				http.SetCookie(w, &c2)
-				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("欢迎 ` + r.Form["loginName"][0] + `");window.location.replace("/");</script>`))
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("欢迎 ` + u.Name + `");window.location.replace("/");</script>`))
+				log.Printf("用户 %s 登录\n", u.Name)
 				return
 			}
 		}
@@ -213,6 +233,19 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func fExit(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("username")
+	if err != nil {
+		if err != http.ErrNoCookie {
+			elog.Println(err)
+		}
+		return
+	}
+	uname, err := url.QueryUnescape(c.Value)
+	if err != nil {
+		elog.Println(err)
+		return
+	}
+
 	c1 := http.Cookie{
 		Name:     "username",
 		Value:    "",
@@ -230,6 +263,7 @@ func fExit(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &c1)
 	http.SetCookie(w, &c2)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+	log.Printf("用户 %s 退出登录\n", uname)
 }
 
 func checkUser(r *http.Request) (UserData, bool) {
@@ -237,6 +271,7 @@ func checkUser(r *http.Request) (UserData, bool) {
 	ud.Name = ""
 	ud.IsLogin = false
 	ud.IsAdmin = false
+	// 获取用户名
 	c1, err := r.Cookie("username")
 	if err != nil {
 		if err != http.ErrNoCookie {
@@ -249,6 +284,7 @@ func checkUser(r *http.Request) (UserData, bool) {
 		elog.Println(err)
 		return ud, false
 	}
+	// 获取token
 	c2, err := r.Cookie("token")
 	if err != nil {
 		if err != http.ErrNoCookie {
@@ -256,10 +292,15 @@ func checkUser(r *http.Request) (UserData, bool) {
 		}
 		return ud, false
 	}
-	var t string = ""
+	// 比对
+	var u User
 	err = udb.View(func(tx *buntdb.Tx) error {
 		var e error
-		t, e = tx.Get("user:" + ud.Name + ":token")
+		s, e := tx.Get("user:" + ud.Name + ":info")
+		if e != nil {
+			return e
+		}
+		e = json.Unmarshal([]byte(s), &u)
 		return e
 	})
 	if err != nil {
@@ -268,7 +309,7 @@ func checkUser(r *http.Request) (UserData, bool) {
 		}
 		return ud, false
 	}
-	if c2.Value == t {
+	if c2.Value == u.Token {
 		ud.IsLogin = true
 		if ud.Name == "admin" {
 			ud.IsAdmin = true
@@ -283,8 +324,10 @@ func getUserList() []string {
 	s := make([]string, 0)
 	err := udb.View(func(tx *buntdb.Tx) error {
 		e := tx.Ascend("name", func(key, value string) bool {
-			if value != "admin" {
-				s = append(s, value)
+			var u User
+			json.Unmarshal([]byte(value), &u)
+			if u.Name != "admin" {
+				s = append(s, u.Name)
 			}
 			return true // continue iteration
 		})
@@ -318,7 +361,9 @@ func fListUser(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("无法渲染页面"))
 			return
 		}
-		err = tmpl.Execute(w, getPageData(r, ud))
+		pd := getPageData(ud)
+		pd.UserList = getUserList()
+		err = tmpl.Execute(w, pd)
 		if err != nil {
 			elog.Println(err)
 			w.Write([]byte("无法渲染页面"))
@@ -352,7 +397,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		err := udb.Update(func(tx *buntdb.Tx) error {
-			s := make([]string, 0)
+			s := make([]string, 0) // 待删除名单
 			e := tx.Ascend("", func(key, value string) bool {
 				ss := strings.Split(key, ":")
 				if len(ss) != 3 {
@@ -370,6 +415,8 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 				_, e = tx.Delete(v)
 				if e != nil {
 					return e
+				} else {
+					log.Println("删除：", v)
 				}
 			}
 			return nil
@@ -441,7 +488,7 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 		// 放进data库
 		err = udb.Update(func(tx *buntdb.Tx) error {
 			for k, v := range kv {
-				if k == "user:admin:passwdMd5" || k == "user:admin:token" {
+				if k == "user:admin:info" {
 					continue
 				}
 				_, _, e := tx.Set(k, v, nil)
@@ -565,10 +612,12 @@ func fCanReg(w http.ResponseWriter, r *http.Request) {
 			gvm.Lock()
 			canReg = true
 			gvm.Unlock()
+			log.Println("开启用户注册")
 		} else if action == "off" {
 			gvm.Lock()
 			canReg = false
 			gvm.Unlock()
+			log.Println("禁止用户注册")
 		} else {
 			//400
 			http.Error(w, "400 Bad Request", http.StatusBadRequest)

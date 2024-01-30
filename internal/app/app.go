@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,8 @@ import (
 )
 
 // 数据库
-var udb *buntdb.DB
+var udb *buntdb.DB // user database
+var tdb *buntdb.DB // task database
 
 // waitgroup
 var wg sync.WaitGroup
@@ -40,26 +42,33 @@ func Run() {
 
 	// 数据库
 	var err error
-	udb, err = buntdb.Open("db/data.db")
+	tdb, err = buntdb.Open("tasks/data.db")
+	if err != nil {
+		elog.Fatalln(err)
+	}
+	defer tdb.Close()
+	udb, err = buntdb.Open("userdata/data.db")
 	if err != nil {
 		elog.Fatalln(err)
 	}
 	defer udb.Close()
 	err = udb.Update(func(tx *buntdb.Tx) error {
-		_, _, e := tx.Set("user:admin:passwdMd5", cfg.AdminPasswdMD5, nil)
+		var admin User
+		admin.Name = "admin"
+		admin.Md5 = cfg.AdminPasswdMD5
+		admin.Token = ""
+		b, e := json.Marshal(admin)
 		if e != nil {
 			return e
 		}
-		_, _, e = tx.Set("user:admin:name", "admin", nil)
-		if e != nil {
-			return e
-		}
-		return nil
+		_, _, e = tx.Set("user:admin:info", string(b), nil)
+		return e
 	})
 	if err != nil {
 		elog.Fatalln(err)
 	}
-	udb.CreateIndex("name", "user:*:name", buntdb.IndexString)
+	udb.CreateIndex("name", "user:*:info", buntdb.IndexJSON("Name"))
+	tdb.CreateIndex("taskInfo", "task:*:info", buntdb.IndexJSON("Title"))
 
 	// 服务器建立
 
@@ -82,6 +91,13 @@ func Run() {
 	mux.HandleFunc("/delUser", fDelUser)                        // 删除用户
 	mux.HandleFunc("/impUser", fImpUser)                        // 导入用户
 	mux.HandleFunc("/expUser", fExpUser)                        // 导出用户
+	mux.HandleFunc("/canSubmit", fCanSubmit)                    // 提交开关
+	mux.HandleFunc("/impContest", fImpContest)                  // 导入比赛
+	mux.HandleFunc("/expContest", fExpContest)                  // 导出比赛
+	mux.HandleFunc("/task", fTask)                              // 查看任务
+	mux.HandleFunc("/editTask", fEditTask)                      // 编辑任务
+	mux.HandleFunc("/newTask", fNewTask)                        // 新建任务
+	mux.HandleFunc("/delTask", fDelTask)                        // 删除任务
 	// mux.HandleFunc("/submit", fSubmit)     // 用户提交
 	// mux.HandleFunc("/rk", fRk) // 排行榜
 	var srv = new(http.Server)

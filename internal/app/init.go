@@ -23,7 +23,7 @@ var (
 	// 是否允许注册
 	canReg bool = false
 	// 是否允许提交
-	canSubmit bool = true
+	canSubmit bool = false
 	// 比赛开始时间
 	startTime int64 = 0
 	// 比赛延续时间
@@ -47,6 +47,9 @@ var LOGINHTML string
 //go:embed static/html/user.html
 var USERLISTHTML string
 
+//go:embed static/html/editTask.html
+var EDITTASKHTML string
+
 //go:embed static/scripts
 var scriptsFs embed.FS
 
@@ -61,7 +64,7 @@ var goodUserName *regexp.Regexp
 
 func Init() {
 	// 新建elog, 专用输出错误信息
-	eLogFile, err := os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE, 0755)
+	eLogFile, err := os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalln("Init: cannot create log file: ", err)
 	}
@@ -82,7 +85,7 @@ func Init() {
 	}
 
 	// 检查文件夹是否存在，不存在则创建
-	err = checkDir("db/")
+	err = checkDir("userdata/")
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
@@ -98,7 +101,7 @@ func Init() {
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
-	err = checkDir("task/")
+	err = checkDir("tasks/")
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
@@ -108,4 +111,5 @@ func Init() {
 	USERREGHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERREGHTML, 1)
 	LOGINHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", LOGINHTML, 1)
 	USERLISTHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERLISTHTML, 1)
+	EDITTASKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", EDITTASKHTML, 1)
 }

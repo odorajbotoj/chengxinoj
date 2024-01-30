@@ -37,7 +37,7 @@ function funcOne(){
 <input type="checkbox" id="selectAll" name="selectAll" value="selectAll" onclick="funcAll();" />
 <label for="selectAll">全选/全不选</label>
 </li>
-{{range $name := .Users}}
+{{range $name := .UserList}}
 <li>
 <input type="checkbox" id="{{$name}}" name="uname" value="{{$name}}" class="selectOne" onclick="funcOne();"/>
 <label for="{{$name}}">{{$name}}</label>
@@ -48,7 +48,7 @@ function funcOne(){
 </ul>
 </fieldset>
 </form>
-<form method="post" action="/upldSend" id="userUpld" enctype="multipart/form-data"></form>
+<form method="post" id="userUpld" enctype="multipart/form-data"></form>
 {{else}}
 <script type="text/javascript">alert("权限不足");window.location.replace("/");</script>
 {{end}}
