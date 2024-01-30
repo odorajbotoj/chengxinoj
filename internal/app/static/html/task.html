@@ -1,0 +1,52 @@
+<div>
+<fieldset>
+<legend>任务点</legend>
+{{with .Task}}
+<fieldset>
+<legend>基本</legend>
+<fieldset>
+<legend>标题</legend>
+<p>{{.Title}}</p>
+</fieldset>
+<fieldset>
+<legend>真实名称</legend>
+<p>{{.RelName}}</p>
+</fieldset>
+<fieldset>
+<legend>简介</legend>
+<p>{{.Introduction}}</p>
+</fieldset>
+<fieldset>
+<legend>允许的文件类型</legend>
+<p>{{.AcceptFile}}</p>
+</fieldset>
+</fieldset>
+
+{{if .Judge}}
+<fieldset>
+<legend>评测</legend>
+<fieldset>
+<legend>输入输出方式</legend>
+<p>{{if .FileIO}}文件{{else}}标准{{end}}输入输出</p>
+</fieldset>
+<fieldset>
+<legend>显示分数</legend>
+<p>{{if .ShowScore}}是{{else}}否{{end}}</p>
+</fieldset>
+<fieldset>
+<legend>时间限制（毫秒）</legend>
+<p>{{.Duration}}</p>
+</fieldset>
+</fieldset>
+{{end}}
+
+<fieldset>
+<legend>提交</legend>
+<form action="/submit" method="post">
+<input type="file" name="submitFile" id="submitFile" accept="{{.AcceptFile}}" />
+<input type="submit" class="btn" value="提交" />
+</form>
+</fieldset>
+{{end}}
+</fieldset>
+</div>

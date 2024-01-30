@@ -32,7 +32,6 @@ func sl() {
 	close(stopSignal)
 	log.Println("正在停止服务")
 	wg.Done()
-	return
 }
 func Run() {
 	// 监听终止信号
@@ -92,12 +91,12 @@ func Run() {
 	mux.HandleFunc("/impUser", fImpUser)                        // 导入用户
 	mux.HandleFunc("/expUser", fExpUser)                        // 导出用户
 	mux.HandleFunc("/canSubmit", fCanSubmit)                    // 提交开关
-	mux.HandleFunc("/impContest", fImpContest)                  // 导入比赛
-	mux.HandleFunc("/expContest", fExpContest)                  // 导出比赛
-	mux.HandleFunc("/task", fTask)                              // 查看任务
-	mux.HandleFunc("/editTask", fEditTask)                      // 编辑任务
-	mux.HandleFunc("/newTask", fNewTask)                        // 新建任务
-	mux.HandleFunc("/delTask", fDelTask)                        // 删除任务
+	// mux.HandleFunc("/impContest", fImpContest)                  // 导入比赛
+	// mux.HandleFunc("/expContest", fExpContest)                  // 导出比赛
+	mux.HandleFunc("/task", fTask)         // 查看任务
+	mux.HandleFunc("/editTask", fEditTask) // 编辑任务
+	mux.HandleFunc("/newTask", fNewTask)   // 新建任务
+	mux.HandleFunc("/delTask", fDelTask)   // 删除任务
 	// mux.HandleFunc("/submit", fSubmit)     // 用户提交
 	// mux.HandleFunc("/rk", fRk) // 排行榜
 	var srv = new(http.Server)

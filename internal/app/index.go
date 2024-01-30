@@ -31,5 +31,4 @@ func fIndex(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("无法渲染页面"))
 		return
 	}
-	return
 }

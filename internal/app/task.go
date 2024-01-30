@@ -26,16 +26,56 @@ type TaskPoint struct {
 	Duration  int64  // 时限（毫秒）
 }
 
-func fImpContest(w http.ResponseWriter, r *http.Request) {
-	return
-}
-
-func fExpContest(w http.ResponseWriter, r *http.Request) {
-	return
-}
-
 func fTask(w http.ResponseWriter, r *http.Request) {
-	return
+	if r.Method == "GET" {
+		// 如果是GET则返回页面
+		ud, out := checkUser(r)
+		if out {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		var tn = r.URL.Query().Get("tn")
+		var task TaskPoint
+		var s string
+		err := tdb.View(func(tx *buntdb.Tx) error {
+			var e error
+			s, e = tx.Get("task:" + tn + ":info")
+			return e
+		})
+		if err != nil && err == buntdb.ErrNotFound {
+			http.Error(w, "404 Not Found", http.StatusNotFound)
+			return
+		}
+		err = json.Unmarshal([]byte(s), &task)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			elog.Println(err)
+			return
+		}
+		pd := getPageData(ud)
+		pd.Task = task
+		tmpl, err := template.New("task").Parse(TASKHTML)
+		if err != nil {
+			elog.Println(err)
+			w.Write([]byte("无法渲染页面"))
+			return
+		}
+		err = tmpl.Execute(w, pd)
+		if err != nil {
+			elog.Println(err)
+			w.Write([]byte("无法渲染页面"))
+			return
+		}
+		return
+	} else {
+		//400
+		http.Error(w, "400 Bad Request", http.StatusBadRequest)
+		return
+	}
 }
 
 func fEditTask(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +111,11 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			e = json.Unmarshal([]byte(s), &t)
 			return e
 		})
+		if err != nil {
+			elog.Println(err)
+			w.Write([]byte("无法渲染页面"))
+			return
+		}
 		pd.Task = t
 		err = tmpl.Execute(w, pd)
 		if err != nil {
@@ -152,7 +197,15 @@ func fNewTask(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，表单为空");window.location.replace("/");</script>`))
 			return
 		}
-		err := tdb.Update(func(tx *buntdb.Tx) error {
+		err := tdb.View(func(tx *buntdb.Tx) error {
+			_, e := tx.Get("task:" + ntn + ":info")
+			return e
+		})
+		if (err == nil) || (err != nil && err != buntdb.ErrNotFound) {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，存在同名任务点");window.location.replace("/");</script>`))
+			return
+		}
+		err = tdb.Update(func(tx *buntdb.Tx) error {
 			var info TaskPoint
 			info.Title = ntn
 			info.FileIO = true
@@ -172,7 +225,7 @@ func fNewTask(w http.ResponseWriter, r *http.Request) {
 			elog.Println(err)
 			return
 		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建成功");window.location.replace("/");</script>`))
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建成功");window.location.replace("/editTask?tn=` + ntn + `");</script>`))
 		log.Println("新建任务：", ntn)
 		return
 	} else {

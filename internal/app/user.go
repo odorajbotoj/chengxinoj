@@ -66,8 +66,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 数据操作
-		var err error
-		err = udb.View(func(tx *buntdb.Tx) error {
+		err := udb.View(func(tx *buntdb.Tx) error {
 			// 过滤重复注册
 			_, e := tx.Get("user:" + r.Form["userRegName"][0] + ":info")
 			return e

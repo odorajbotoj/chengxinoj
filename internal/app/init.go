@@ -50,6 +50,9 @@ var USERLISTHTML string
 //go:embed static/html/editTask.html
 var EDITTASKHTML string
 
+//go:embed static/html/task.html
+var TASKHTML string
+
 //go:embed static/scripts
 var scriptsFs embed.FS
 
@@ -112,4 +115,5 @@ func Init() {
 	LOGINHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", LOGINHTML, 1)
 	USERLISTHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERLISTHTML, 1)
 	EDITTASKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", EDITTASKHTML, 1)
+	TASKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", TASKHTML, 1)
 }
