@@ -97,7 +97,7 @@ func Run() {
 	mux.HandleFunc("/editTask", fEditTask) // 编辑任务
 	mux.HandleFunc("/newTask", fNewTask)   // 新建任务
 	mux.HandleFunc("/delTask", fDelTask)   // 删除任务
-	// mux.HandleFunc("/submit", fSubmit)     // 用户提交
+	mux.HandleFunc("/submit", fSubmit)     // 用户提交
 	// mux.HandleFunc("/rk", fRk) // 排行榜
 	var srv = new(http.Server)
 	srv.Addr = cfg.Port

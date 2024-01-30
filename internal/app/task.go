@@ -17,6 +17,7 @@ type TaskPoint struct {
 	Introduction string // 简介
 	AcceptFile   string // 允许的文件类型
 	SubDir       bool   // 建立子文件夹
+	MaxSize      int64  // 最大文件大小（字节）
 
 	Judge     bool   // 是否评测（以下内容仅在此选项为真时有意义）
 	FileIO    bool   // 文件输入输出（否则是标准输入输出）
@@ -135,6 +136,14 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 		if r.Form.Get("subd") == "subd" {
 			t.SubDir = true
 		}
+		var ms int64
+		ms, err = strconv.ParseInt(r.Form.Get("maxs"), 10, 64)
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，内部发生错误");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
+			elog.Println(err)
+			return
+		}
+		t.MaxSize = ms
 		if r.Form.Get("recvOrJudge") == "judge" {
 			t.Judge = true
 			if r.Form.Get("fileOrStd") == "fileIO" {

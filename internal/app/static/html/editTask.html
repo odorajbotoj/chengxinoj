@@ -27,11 +27,16 @@
 <label for="subd">建立子文件夹</label>
 </div>
 <div>
+<label for="maxs" style="width: 300px; text-align: right; display: inline-block">源文件大小限制（1～104857600字节）：</label>
+{{if .MaxSize}}<input type="number" id="maxs" name="maxs" min="1" max="104857600" required value="{{.MaxSize}}" />{{else}}<input type="number" id="maxs" name="maxs" min="1" max="104857600" required value="524288" />{{end}}
+</div>
+<div>
 <input type="radio" id="recv" name="recvOrJudge" value="recv" {{if not .Judge}}checked{{end}} onclick="ifJudge()"/>
 <label for="recv">仅收取</label>
 <input type="radio" id="judge" name="recvOrJudge" value="judge" {{if .Judge}}checked{{end}} onclick="ifJudge()"/>
 <label for="judge">内置简单评测</label>
 <p>警告：内置简单评测无任何安保措施！提交者有可能利用那些漏洞！</p>
+<p>注意：内置简单评测仅支持C++，且为单线程评测。</p>
 </div>
 <div>
 <input type="radio" id="fileIO" name="fileOrStd" value="fileIO" {{if .FileIO}}checked{{end}} class="judgeOpt" />

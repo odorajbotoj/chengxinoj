@@ -20,8 +20,11 @@
 <legend>允许的文件类型</legend>
 <p>{{.AcceptFile}}</p>
 </fieldset>
+<fieldset>
+<legend>最大源文件大小（字节）</legend>
+<p>{{.MaxSize}}</p>
 </fieldset>
-
+</fieldset>
 {{if .Judge}}
 <fieldset>
 <legend>评测</legend>
@@ -39,10 +42,10 @@
 </fieldset>
 </fieldset>
 {{end}}
-
 <fieldset>
 <legend>提交</legend>
-<form action="/submit" method="post">
+<form action="/submit" method="post" enctype="multipart/form-data">
+<input type="hidden" id="subFN" name="subFN" value="{{.RelName}}" />
 <input type="file" name="submitFile" id="submitFile" accept="{{.AcceptFile}}" />
 <input type="submit" class="btn" value="提交" />
 </form>

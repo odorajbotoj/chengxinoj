@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 
@@ -75,19 +74,11 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 			if err == buntdb.ErrNotFound {
 				// 说明可以注册
 				// 新建用户Data文件夹
-				ex, err := exists("recv/" + r.Form["userRegName"][0])
+				err = checkDir("recv/" + r.Form["userRegName"][0])
 				if err != nil {
 					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/");</script>`))
 					elog.Println(err)
 					return
-				}
-				if !ex {
-					err = os.Mkdir("recv/"+r.Form["userRegName"][0], 0755)
-					if err != nil {
-						w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/");</script>`))
-						elog.Println(err)
-						return
-					}
 				}
 				// 写入用户数据
 				var u User
