@@ -144,7 +144,7 @@ dlcb.addEventListener("change", () => {
 {{range $name := .TaskList}}
 <li>
 <input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>
-<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>{{if not .IsStarted}}&nbsp&nbsp<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>{{end}}
+<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>&nbsp&nbsp<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>
 </li>
 {{else}}
 <li>没有任务点</li>
