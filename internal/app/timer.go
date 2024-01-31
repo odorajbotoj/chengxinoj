@@ -30,7 +30,6 @@ func timer() {
 					isStarted = false
 					startTime = 0
 					duration = 0
-					canSubmit = false
 					gvm.Unlock()
 					log.Println("比赛结束")
 				case <-stopSignal:
@@ -46,7 +45,6 @@ func timer() {
 					isStarted = false
 					startTime = 0
 					duration = 0
-					canSubmit = false
 					gvm.Unlock()
 					log.Println("比赛结束")
 				case <-time.After(time.Duration(t) * time.Minute):
@@ -54,7 +52,6 @@ func timer() {
 					isStarted = false
 					startTime = 0
 					duration = 0
-					canSubmit = false
 					gvm.Unlock()
 					log.Println("比赛结束")
 				case <-stopSignal:
