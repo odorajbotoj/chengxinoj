@@ -6,7 +6,6 @@ type PageData struct {
 	UserData
 	IsStarted bool
 	CanReg    bool
-	CanSubmit bool
 	StartTime int64
 	Duration  int64
 	SendFiles map[string]int64
@@ -30,7 +29,6 @@ func getPageData(ud UserData) PageData {
 	pd.StartTime = startTime
 	pd.Duration = duration
 	pd.CanReg = canReg
-	pd.CanSubmit = canSubmit
 	gvm.RUnlock()
 	pd.UserData = ud
 	return pd

@@ -14,7 +14,7 @@
 </fieldset>
 <fieldset>
 <legend>简介</legend>
-<p>{{.Introduction}}</p>
+<p>{{if .Introduction}}{{.Introduction}}{{else}}（空）{{end}}</p>
 </fieldset>
 <fieldset>
 <legend>允许的文件类型</legend>
@@ -23,6 +23,10 @@
 <fieldset>
 <legend>最大源文件大小（字节）</legend>
 <p>{{.MaxSize}}</p>
+</fieldset>
+<fieldset>
+<legend>要收取的文件名（含后缀）：</legend>
+<p>{{.FileName}}</p>
 </fieldset>
 </fieldset>
 {{if .Judge}}
@@ -45,8 +49,8 @@
 <fieldset>
 <legend>提交</legend>
 <form action="/submit" method="post" enctype="multipart/form-data">
-<input type="hidden" id="subFN" name="subFN" value="{{.RelName}}" />
-<input type="file" name="submitFile" id="submitFile" accept="{{.AcceptFile}}" />
+<input type="hidden" id="subFN" name="subFN" value="{{.Title}}" />
+<input type="file" name="submitFile" id="submitFile" required accept="{{.AcceptFile}}" />
 <input type="submit" class="btn" value="提交" />
 </form>
 </fieldset>

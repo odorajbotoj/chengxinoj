@@ -56,16 +56,18 @@ function funcOne(aname, oname){
 <legend>比赛</legend>
 
 <!-- 比赛设置 -->
+{{if not .IsStarted}}
 <fieldset id="contestCfg">
 <legend>基本</legend>
 <form action="/impContest" method="post" enctype="multipart/form-data" style="display: inline-block;">
-<input type="file" id="file" name="file" />
+<input type="file" id="file" name="file" required />
 <input class="btn" type="submit" value="导入比赛" />
 </form>
 <form action="/expContest" method="get" target="_blank" style="display: inline-block;">
 <input class="btn" type="submit" value="导出比赛" />
 </form>
 </fieldset>
+{{end}}
 
 <!-- 计时器 -->
 <fieldset id="timer">
@@ -95,12 +97,14 @@ dlcb.addEventListener("change", () => {
 <fieldset id="sendFiles">
 <legend>下发文件</legend>
 <form method="post">
+{{if not .IsStarted}}
 <div>
-<input type="file" id="file" name="file" form="fileUpld" multiple />
+<input type="file" id="file" name="file" form="fileUpld" required multiple />
 <input class="btn" type="submit" formaction="/upldSend" form="fileUpld" value="上传文件" />
 <input class="btn" type="submit" formaction="/delSend" value="删除选中" onclick="return confirm('确认删除？');" />
 </div>
 <p>注意：单次上传文件大小总和应不大于100MB。新同名文件会直接覆盖旧文件。</p>
+{{end}}
 <ul>
 <li>
 <input type="checkbox" id="fileSA" name="fileSA" value="fileSA" onclick="funcAll('fileSA', 'fileSO');" />
@@ -116,20 +120,22 @@ dlcb.addEventListener("change", () => {
 {{end}}
 </ul>
 </form>
-<form method="post" action="/upldSend" id="fileUpld" enctype="multipart/form-data"></form>
+{{if not .IsStarted}}<form method="post" action="/upldSend" id="fileUpld" enctype="multipart/form-data"></form>{{end}}
 </fieldset>
 
 <!-- 任务点管理 -->
 <fieldset id="tasks">
 <legend>任务点</legend>
 <form method="post">
+{{if not .IsStarted}}
 <div>
 <label for="ntname">名称（1～20字）：</label>
 <input type="text" id="ntname" name="ntname" form="newTask" required minlength="1" maxlength="20" size="20" />
 <input class="btn" type="submit" form="newTask" value="新建任务" />
 <input class="btn" type="submit" formaction="/delTask" value="删除选中" onclick="return confirm('确认删除？');" />
-{{if .CanSubmit}}<input type="hidden" id="action" name="action" value="off" form="setCanSubmit" /><input class="btn" type="submit" value="禁止提交" form="setCanSubmit" />{{else}}<input type="hidden" id="action" name="action" value="on" form="setCanSubmit" /><input class="btn" type="submit" value="开放提交" form="setCanSubmit" />{{end}}
+<input class="btn" type="submit" form="packDown" value="打包下载" />
 </div>
+{{end}}
 <ul>
 <li>
 <input type="checkbox" id="taskSA" name="taskSA" value="taskSA" onclick="funcAll('taskSA', 'taskSO');" />
@@ -138,15 +144,17 @@ dlcb.addEventListener("change", () => {
 {{range $name := .TaskList}}
 <li>
 <input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>
-<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>&nbsp&nbsp<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>
+<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>{{if not .IsStarted}}&nbsp&nbsp<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>{{end}}
 </li>
 {{else}}
 <li>没有任务点</li>
 {{end}}
 </ul>
 </form>
-<form method="get" action="/canSubmit" enctype="multipart/form-data" style="display: inline-block;" id="setCanSubmit"></form>
+{{if not .IsStarted}}
 <form id="newTask" method="get" action="/newTask"></form>
+<form id="packDown" method="get" action="/packDown"></form>
+{{end}}
 </fieldset>
 
 <fieldset>

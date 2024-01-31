@@ -22,8 +22,6 @@ var (
 	isStarted bool = false
 	// 是否允许注册
 	canReg bool = false
-	// 是否允许提交
-	canSubmit bool = false
 	// 比赛开始时间
 	startTime int64 = 0
 	// 比赛延续时间

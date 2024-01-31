@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -52,7 +53,6 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，当前禁止注册");window.location.replace("/");</script>`))
 			return
 		}
-
 		// 检查表单是否为空
 		r.ParseForm()
 		if len(r.Form["userRegName"]) == 0 || len(r.Form["userRegMd5"]) == 0 {
@@ -387,7 +387,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		err := udb.Update(func(tx *buntdb.Tx) error {
-			s := make([]string, 0) // 待删除名单
+			s := make([]string, 0) // 待删除的key名单
 			e := tx.Ascend("", func(key, value string) bool {
 				ss := strings.Split(key, ":")
 				if len(ss) != 3 {
@@ -414,6 +414,15 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：内部错误");window.location.replace("/listUser");</script>`))
 			return
+		}
+		// 删除用户目录
+		for _, v := range lst {
+			err = os.RemoveAll("recv/" + v)
+			if err != nil {
+				elog.Println(err)
+			} else {
+				log.Println("删除：recv/" + v)
+			}
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除成功");window.location.replace("/listUser");</script>`))
 		return

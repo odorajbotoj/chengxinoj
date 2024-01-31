@@ -55,7 +55,10 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
 			return
 		}
-		if !ud.IsAdmin {
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
@@ -90,7 +93,10 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
 			return
 		}
-		if !ud.IsAdmin {
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}

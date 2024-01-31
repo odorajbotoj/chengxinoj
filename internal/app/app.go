@@ -78,19 +78,24 @@ func Run() {
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(scriptsFs))) // 静态资源
 	mux.HandleFunc("/", fIndex)                                 // 根页面，用户主页面
-	mux.HandleFunc("/reg", fReg)                                // 注册页面
-	mux.HandleFunc("/login", fLogin)                            // 登录页面
-	mux.HandleFunc("/exit", fExit)                              // 退出登录
-	mux.HandleFunc("/getSend", fGetSend)                        // 下载下发的文件
-	mux.HandleFunc("/delSend", fDelSend)                        // 删除下发的文件
-	mux.HandleFunc("/upldSend", fUpldSend)                      // 上传要下发的文件
-	mux.HandleFunc("/timer", fTimer)                            // 计时器
-	mux.HandleFunc("/canReg", fCanReg)                          // 注册开关
-	mux.HandleFunc("/listUser", fListUser)                      // 用户列表
-	mux.HandleFunc("/delUser", fDelUser)                        // 删除用户
-	mux.HandleFunc("/impUser", fImpUser)                        // 导入用户
-	mux.HandleFunc("/expUser", fExpUser)                        // 导出用户
-	mux.HandleFunc("/canSubmit", fCanSubmit)                    // 提交开关
+
+	mux.HandleFunc("/reg", fReg)     // 注册页面
+	mux.HandleFunc("/login", fLogin) // 登录页面
+	mux.HandleFunc("/exit", fExit)   // 退出登录
+
+	mux.HandleFunc("/getSend", fGetSend)   // 下载下发的文件
+	mux.HandleFunc("/delSend", fDelSend)   // 删除下发的文件
+	mux.HandleFunc("/upldSend", fUpldSend) // 上传要下发的文件
+
+	mux.HandleFunc("/timer", fTimer) // 计时器
+
+	mux.HandleFunc("/canReg", fCanReg)     // 注册开关
+	mux.HandleFunc("/listUser", fListUser) // 用户列表
+	mux.HandleFunc("/delUser", fDelUser)   // 删除用户
+	mux.HandleFunc("/impUser", fImpUser)   // 导入用户
+	mux.HandleFunc("/expUser", fExpUser)   // 导出用户
+
+	mux.HandleFunc("/packDown", fPackDown) // 打包下载
 	// mux.HandleFunc("/impContest", fImpContest)                  // 导入比赛
 	// mux.HandleFunc("/expContest", fExpContest)                  // 导出比赛
 	mux.HandleFunc("/task", fTask)         // 查看任务

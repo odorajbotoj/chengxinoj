@@ -18,6 +18,7 @@ type TaskPoint struct {
 	AcceptFile   string // 允许的文件类型
 	SubDir       bool   // 建立子文件夹
 	MaxSize      int64  // 最大文件大小（字节）
+	FileName     string // 收取的文件名
 
 	Judge     bool   // 是否评测（以下内容仅在此选项为真时有意义）
 	FileIO    bool   // 文件输入输出（否则是标准输入输出）
@@ -91,7 +92,10 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
 			return
 		}
-		if !ud.IsAdmin {
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
@@ -131,8 +135,37 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 		var err error
 		t.Title = r.Form.Get("title")
 		t.RelName = r.Form.Get("relName")
+		// 检查同真名
+		var same bool
+		err = tdb.View(func(tx *buntdb.Tx) error {
+			e := tx.Ascend("taskInfo", func(key, value string) bool {
+				var tmp TaskPoint
+				e := json.Unmarshal([]byte(value), &tmp)
+				if e != nil {
+					elog.Println(e)
+					return true
+				}
+				same = tmp.RelName == t.RelName
+				return !same
+			})
+			if e == buntdb.ErrNotFound {
+				return nil
+			}
+			return e
+		})
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，内部发生错误");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
+			elog.Println(err)
+			return
+		}
+		if same {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，存在相同真名的任务点");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
+			return
+		}
+		// 继续填充内容
 		t.Introduction = r.Form.Get("introduction")
 		t.AcceptFile = r.Form.Get("acf")
+		t.FileName = r.Form.Get("fileName")
 		if r.Form.Get("subd") == "subd" {
 			t.SubDir = true
 		}
@@ -197,7 +230,10 @@ func fNewTask(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
 			return
 		}
-		if !ud.IsAdmin {
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
@@ -251,7 +287,10 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
 			return
 		}
-		if !ud.IsAdmin {
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
