@@ -99,6 +99,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			log.Println("judge", taskinfo.Name)
 			// 接入worker
 		}
+		log.Println("用户 " + ud.Name + " 提交 " + taskinfo.Name)
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交成功");window.location.replace("/task?tn=` + na + `");</script>`))
 		return
 	} else {
@@ -138,6 +139,7 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空成功");window.location.replace("/");</script>`))
+		log.Println("清空用户上传")
 		return
 	} else {
 		http.Error(w, "400 Bad Request", http.StatusBadRequest)
@@ -170,6 +172,7 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空成功");window.location.replace("/");</script>`))
+		log.Println("用户 " + ud.Name + " 清空个人上传")
 		return
 	} else {
 		http.Error(w, "400 Bad Request", http.StatusBadRequest)

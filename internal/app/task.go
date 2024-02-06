@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -266,6 +267,7 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存成功");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
+		log.Println("保存任务信息 " + t.Name)
 		return
 	} else {
 		//400
@@ -326,6 +328,7 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 		})
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除成功");window.location.replace("/");</script>`))
@@ -355,7 +358,7 @@ func getTaskList() []string {
 }
 
 func fUpldTest(w http.ResponseWriter, r *http.Request) {
-	/*if r.Method == "POST" {
+	if r.Method == "POST" {
 		ud, out := checkUser(r)
 		if out {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
@@ -377,35 +380,70 @@ func fUpldTest(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "文件过大，大于100MB", http.StatusBadRequest)
 			return
 		}
-		zipf, _, err := r.FormFile("testpoints")
+		zipf, zipfh, err := r.FormFile("testpoints")
 		na := r.Form.Get("tn")
 		if err != nil { // 出错则取消
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传失败：内部错误（可能提交了空的表单）");window.location.replace("/");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + na + `");</script>`))
+			elog.Println(err)
 			return
 		}
-		for _, f := range files {
-			fr, _ := f.Open()
-			fo, err := os.Create("send/" + f.Filename)
-			if err != nil {
-				elog.Println("fUpldSend: ", err)
-				continue
-			} else {
-				log.Println("上传文件：" + f.Filename)
-			}
-			defer fr.Close()
-			defer fo.Close()
-			io.Copy(fo, fr)
+		err = checkDir("tasks/" + na + "/")
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + na + `");</script>`))
+			elog.Println(err)
+			return
 		}
-		http.Redirect(w, r, "/", http.StatusFound)
+		err = unzipFile(zipf, zipfh.Size, "tasks/"+na+"/")
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + na + `");</script>`))
+			elog.Println(err)
+			return
+		}
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传成功");window.location.replace("/editTask?tn=` + na + `");</script>`))
+		log.Println("上传测试点 " + na)
 		return
 	} else {
 		//400
 		http.Error(w, "400 Bad Request", http.StatusBadRequest)
 		return
-	}*/
-	return
+	}
 }
 
 func fDelTest(w http.ResponseWriter, r *http.Request) {
-	return
+	if r.Method == "GET" {
+		ud, out := checkUser(r)
+		if out {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			return
+		}
+		r.ParseForm() // 别忘了，否则拿到的是空的
+		na := r.Form.Get("tn")
+		if na == "" {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败，参数为空");window.location.replace("/");</script>`))
+			return
+		}
+		err := os.RemoveAll("tasks/" + na + "/")
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + na + `");</script>`))
+			elog.Println(err)
+			return
+		}
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空成功");window.location.replace("/editTask?tn=` + na + `");</script>`))
+		log.Println("清空上传的测试点 " + na)
+		return
+	} else {
+		http.Error(w, "400 Bad Request", http.StatusBadRequest)
+		return
+	}
 }

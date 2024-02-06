@@ -143,3 +143,39 @@ func zipFile(w io.Writer, srcs ...string) error {
 	}
 	return nil
 }
+
+// 解压缩
+func unzipFile(zipf io.ReaderAt, size int64, dst string) error {
+	zipr, err := zip.NewReader(zipf, size)
+	if err != nil {
+		return err
+	}
+	for _, f := range zipr.File {
+		filePath := f.Name
+		if f.FileInfo().IsDir() {
+			_ = os.MkdirAll(filePath, 0755)
+			continue
+		}
+		// 创建对应文件夹
+		err = os.MkdirAll(filepath.Dir(filePath), 0755)
+		if err != nil {
+			return err
+		}
+		// 解压到的目标文件
+		dstFile, err := os.OpenFile(dst+filePath, os.O_WRONLY|os.O_CREATE, f.Mode())
+		if err != nil {
+			return err
+		}
+		file, err := f.Open()
+		if err != nil {
+			return err
+		}
+		// 写入到解压到的目标文件
+		if _, err = io.Copy(dstFile, file); err != nil {
+			return err
+		}
+		dstFile.Close()
+		file.Close()
+	}
+	return nil
+}

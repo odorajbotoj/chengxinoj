@@ -129,4 +129,5 @@ func Run() {
 		elog.Fatalf("HTTP server ListenAndServe: %v\n", err)
 	}
 	wg.Wait()
+	log.Println("主程序退出")
 }

@@ -80,7 +80,7 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 				log.Println("删除文件：" + fn)
 			}
 		}
-		http.Redirect(w, r, "/", http.StatusFound)
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除成功");window.location.replace("/");</script>`))
 		return
 	} else {
 		//400
@@ -131,7 +131,7 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 			defer fo.Close()
 			io.Copy(fo, fr)
 		}
-		http.Redirect(w, r, "/", http.StatusFound)
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传成功");window.location.replace("/");</script>`))
 		return
 	} else {
 		//400

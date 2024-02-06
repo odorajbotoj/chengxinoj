@@ -59,7 +59,7 @@
 <div>
 </form>
 <hr/>
-<form action="/upldTest" method="post" style="display: inline-block;">
+<form action="/upldTest" method="post" style="display: inline-block;" enctype="multipart/form-data">
 <div>
 <label for="testpoints" style="width: 300px; text-align: right; display: inline-block">上传测试点：</label>
 <input type="hidden" name="tn" value="{{.Name}}" />
@@ -72,7 +72,7 @@
 </form>
 <form method="get" action="/delTest" style="display: inline-block;">
 <input type="hidden" name="tn" value="{{.Name}}" />
-<input type="submit" class="btn" formmethod="get" value="清空上传" onclick="return confirm('确认删除上传的测试点吗？');">
+<input type="submit" class="btn" value="清空上传" onclick="return confirm('确认删除上传的测试点吗？');">
 </form>
 </fieldset>
 <script>

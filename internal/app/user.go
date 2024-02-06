@@ -502,6 +502,7 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入成功");window.location.replace("/listUser");</script>`))
+		log.Println("导入用户")
 		return
 	} else {
 		//400
@@ -583,6 +584,7 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", http.DetectContentType(buf.Bytes()))
 		w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
 		w.Write(buf.Bytes())
+		log.Println("导出用户")
 		return
 	} else {
 		//400
