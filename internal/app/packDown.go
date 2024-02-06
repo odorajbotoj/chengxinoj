@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"net/http"
 	"strconv"
 )
@@ -19,16 +20,17 @@ func fPackDown(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
-		b, err := zipFile("recv/")
+		var b = new(bytes.Buffer)
+		err := zipFile(b, "recv/")
 		if err != nil {
 			elog.Println("fPackDown: ", err)
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Disposition", "attachment; filename=recv.zip")
-		w.Header().Set("Content-Type", http.DetectContentType(b))
-		w.Header().Set("Content-Length", strconv.Itoa(len(b)))
-		w.Write(b)
+		w.Header().Set("Content-Type", http.DetectContentType(b.Bytes()))
+		w.Header().Set("Content-Length", strconv.Itoa(b.Len()))
+		w.Write(b.Bytes())
 		return
 	} else {
 		//400

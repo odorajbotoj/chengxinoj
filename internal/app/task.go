@@ -12,20 +12,30 @@ import (
 )
 
 type TaskPoint struct {
-	Title        string // 标题
-	RelName      string // 真实名字
+	Name         string // 名字
 	Introduction string // 简介
-	AcceptFile   string // 允许的文件类型
 	SubDir       bool   // 建立子文件夹
 	MaxSize      int64  // 最大文件大小（字节）
-	FileName     string // 收取的文件名
+	FileType     string // 允许的后缀
 
 	Judge     bool   // 是否评测（以下内容仅在此选项为真时有意义）
 	FileIO    bool   // 文件输入输出（否则是标准输入输出）
-	ShowScore bool   // 显示分数（OI赛制）（否则是ACM赛制）
+	ShowScore bool   // 显示分数
 	CC        string // 编译器
 	CFlags    string // 编译选项
 	Duration  int64  // 时限（毫秒）
+}
+
+type TaskStat struct {
+	UserName string // 用户名称
+
+	Name      string // 题目标题
+	Submitted bool   // 是否提交
+
+	Judge     bool   // 是否评测（以下内容仅在此选项为真时有意义）
+	ShowScore bool   // 显示分数
+	Stat      string // 评测状态
+	Score     int    // 分数
 }
 
 func fTask(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +48,13 @@ func fTask(w http.ResponseWriter, r *http.Request) {
 		}
 		if !ud.IsLogin {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if !iss && !ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
 		var tn = r.URL.Query().Get("tn")
@@ -72,6 +89,68 @@ func fTask(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("无法渲染页面"))
 			return
 		}
+		return
+	} else {
+		//400
+		http.Error(w, "400 Bad Request", http.StatusBadRequest)
+		return
+	}
+}
+
+func fNewTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		// 如果是GET则返回页面
+		ud, out := checkUser(r)
+		if out {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			return
+		}
+		var ntn = r.URL.Query().Get("ntname")
+		if ntn == "" {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，表单为空");window.location.replace("/");</script>`))
+			return
+		}
+		err := tdb.View(func(tx *buntdb.Tx) error {
+			_, e := tx.Get("task:" + ntn + ":info")
+			return e
+		})
+		if (err == nil) || (err != nil && err != buntdb.ErrNotFound) {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，存在同名任务点");window.location.replace("/");</script>`))
+			return
+		}
+		err = tdb.Update(func(tx *buntdb.Tx) error {
+			var info TaskPoint
+			info.Name = ntn
+			info.FileIO = true
+			info.Judge = false
+			b, e := json.Marshal(info)
+			if e != nil {
+				return e
+			}
+			_, _, e = tx.Set("task:"+ntn+":info", string(b), nil)
+			if e != nil {
+				return e
+			}
+			return nil
+		})
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
+			return
+		}
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建成功");window.location.replace("/editTask?tn=` + ntn + `");</script>`))
+		log.Println("新建任务：", ntn)
 		return
 	} else {
 		//400
@@ -130,53 +209,30 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	} else if r.Method == "POST" {
+		// 如果是POST就处理表单
 		r.ParseForm()
 		var t TaskPoint
 		var err error
-		t.Title = r.Form.Get("title")
-		t.RelName = r.Form.Get("relName")
-		// 检查同真名
-		var same bool
-		err = tdb.View(func(tx *buntdb.Tx) error {
-			e := tx.Ascend("taskInfo", func(key, value string) bool {
-				var tmp TaskPoint
-				e := json.Unmarshal([]byte(value), &tmp)
-				if e != nil {
-					elog.Println(e)
-					return true
-				}
-				same = tmp.RelName == t.RelName
-				return !same
-			})
-			if e == buntdb.ErrNotFound {
-				return nil
-			}
-			return e
-		})
+		t.Name = r.Form.Get("tn")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，内部发生错误");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
 			elog.Println(err)
-			return
-		}
-		if same {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，存在相同真名的任务点");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
 			return
 		}
 		// 继续填充内容
 		t.Introduction = r.Form.Get("introduction")
-		t.AcceptFile = r.Form.Get("acf")
-		t.FileName = r.Form.Get("fileName")
 		if r.Form.Get("subd") == "subd" {
 			t.SubDir = true
 		}
 		var ms int64
 		ms, err = strconv.ParseInt(r.Form.Get("maxs"), 10, 64)
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，内部发生错误");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
 			elog.Println(err)
 			return
 		}
 		t.MaxSize = ms
+		t.FileType = r.Form.Get("fileType")
 		if r.Form.Get("recvOrJudge") == "judge" {
 			t.Judge = true
 			if r.Form.Get("fileOrStd") == "fileIO" {
@@ -190,7 +246,7 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			var d int64
 			d, err = strconv.ParseInt(r.Form.Get("duration"), 10, 64)
 			if err != nil {
-				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，内部发生错误");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
 				elog.Println(err)
 				return
 			}
@@ -201,77 +257,15 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			if e != nil {
 				return e
 			}
-			_, _, e = tx.Set("task:"+t.Title+":info", string(b), nil)
+			_, _, e = tx.Set("task:"+t.Name+":info", string(b), nil)
 			return e
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败，内部发生错误");window.location.replace("/editTask?tn=` + t.Title + `");;</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + t.Name + `");;</script>`))
 			elog.Println(err)
 			return
 		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存成功");window.location.replace("/editTask?tn=` + t.Title + `");</script>`))
-		return
-	} else {
-		//400
-		http.Error(w, "400 Bad Request", http.StatusBadRequest)
-		return
-	}
-}
-
-func fNewTask(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		// 如果是GET则返回页面
-		ud, out := checkUser(r)
-		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
-			return
-		}
-		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
-			return
-		}
-		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
-			http.Error(w, "403 Forbidden", http.StatusForbidden)
-			return
-		}
-		var ntn = r.URL.Query().Get("ntname")
-		if ntn == "" {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，表单为空");window.location.replace("/");</script>`))
-			return
-		}
-		err := tdb.View(func(tx *buntdb.Tx) error {
-			_, e := tx.Get("task:" + ntn + ":info")
-			return e
-		})
-		if (err == nil) || (err != nil && err != buntdb.ErrNotFound) {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，存在同名任务点");window.location.replace("/");</script>`))
-			return
-		}
-		err = tdb.Update(func(tx *buntdb.Tx) error {
-			var info TaskPoint
-			info.Title = ntn
-			info.FileIO = true
-			info.Judge = false
-			b, e := json.Marshal(info)
-			if e != nil {
-				return e
-			}
-			_, _, e = tx.Set("task:"+ntn+":info", string(b), nil)
-			if e != nil {
-				return e
-			}
-			return nil
-		})
-		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，内部发生错误");window.location.replace("/");</script>`))
-			elog.Println(err)
-			return
-		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建成功");window.location.replace("/editTask?tn=` + ntn + `");</script>`))
-		log.Println("新建任务：", ntn)
+		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存成功");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
 		return
 	} else {
 		//400
@@ -285,6 +279,10 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 		ud, out := checkUser(r)
 		if out {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
 			return
 		}
 		gvm.RLock()
@@ -327,7 +325,7 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：内部错误");window.location.replace("/");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除成功");window.location.replace("/");</script>`))
@@ -345,7 +343,7 @@ func getTaskList() []string {
 		e := tx.Ascend("taskInfo", func(key, value string) bool {
 			var info TaskPoint
 			json.Unmarshal([]byte(value), &info)
-			s = append(s, info.Title)
+			s = append(s, info.Name)
 			return true // continue iteration
 		})
 		return e
@@ -354,4 +352,60 @@ func getTaskList() []string {
 		elog.Println(err)
 	}
 	return s
+}
+
+func fUpldTest(w http.ResponseWriter, r *http.Request) {
+	/*if r.Method == "POST" {
+		ud, out := checkUser(r)
+		if out {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		gvm.RLock()
+		iss := isStarted
+		gvm.RUnlock()
+		if iss || !ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 100*1024*1024+1024)
+		if err := r.ParseMultipartForm(100*1024*1024 + 1024); err != nil {
+			http.Error(w, "文件过大，大于100MB", http.StatusBadRequest)
+			return
+		}
+		zipf, _, err := r.FormFile("testpoints")
+		na := r.Form.Get("tn")
+		if err != nil { // 出错则取消
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传失败：内部错误（可能提交了空的表单）");window.location.replace("/");</script>`))
+			return
+		}
+		for _, f := range files {
+			fr, _ := f.Open()
+			fo, err := os.Create("send/" + f.Filename)
+			if err != nil {
+				elog.Println("fUpldSend: ", err)
+				continue
+			} else {
+				log.Println("上传文件：" + f.Filename)
+			}
+			defer fr.Close()
+			defer fo.Close()
+			io.Copy(fo, fr)
+		}
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	} else {
+		//400
+		http.Error(w, "400 Bad Request", http.StatusBadRequest)
+		return
+	}*/
+	return
+}
+
+func fDelTest(w http.ResponseWriter, r *http.Request) {
+	return
 }

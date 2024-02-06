@@ -17,7 +17,7 @@ func fGetSend(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ud.IsLogin {
-			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
 			return
 		}
 		gvm.RLock()
@@ -53,6 +53,10 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 		ud, out := checkUser(r)
 		if out {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
 			return
 		}
 		gvm.RLock()
@@ -91,6 +95,10 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 		ud, out := checkUser(r)
 		if out {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			return
+		}
+		if !ud.IsLogin {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
 			return
 		}
 		gvm.RLock()

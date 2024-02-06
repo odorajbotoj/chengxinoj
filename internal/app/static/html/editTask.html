@@ -5,22 +5,12 @@
 <legend>编辑任务点</legend>
 <form method="post" action="/editTask">
 <div>
-<label for="title" style="width: 300px; text-align: right; display: inline-block">任务标题（1～20字）：</label>
-<input type="text" id="title" name="title" required minlength="1" maxlength="20" size="20" value="{{.Title}}" />
-<p>注意：若修改了任务点标题，则该任务点将被另存为新的任务点。若有重名任务点，则旧数据将被覆盖。</p>
-</div>
-<div>
-<label for="relName" style="width: 300px; text-align: right; display: inline-block">真实名称（1～20字，建议英文）：</label>
-<input type="text" id="relName" name="relName" required minlength="1" maxlength="20" size="20" value="{{.RelName}}"/>
+<label style="width: 300px; text-align: right; display: inline-block">名称：{{.Name}}</label>
+<input type="hidden" name="tn" value="{{.Name}}" />
 </div>
 <div>
 <label for="introduction" style="width: 300px; text-align: right; display: inline-block">简介（100字内）：</label>
 <textarea id="introduction" name="introduction" rows="5" cols="20" minlength="0" maxlength="100">{{.Introduction}}</textarea>
-</div>
-<div>
-<label for="acf" style="width: 300px; text-align: right; display: inline-block">允许的文件类型（100字内）：</label>
-<input type="text" id="acf" name="acf" required minlength="1" maxlength="100" size="20" value="{{.AcceptFile}}"/>
-<a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/input/file#%E5%94%AF%E4%B8%80%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B%E8%AF%B4%E6%98%8E%E7%AC%A6">参见</a>
 </div>
 <div>
 <input type="checkbox" id="subd" name="subd" value="subd" {{if .SubDir}}checked{{end}} />
@@ -31,8 +21,8 @@
 {{if .MaxSize}}<input type="number" id="maxs" name="maxs" min="1" max="104857600" required value="{{.MaxSize}}" />{{else}}<input type="number" id="maxs" name="maxs" min="1" max="104857600" required value="524288" />{{end}}
 </div>
 <div>
-<label for="fileName" style="width: 300px; text-align: right; display: inline-block">要收取的文件名（含后缀）：</label>
-<input type="text" id="fileName" name="fileName" required minlength="1" maxlength="20" size="20" value="{{.FileName}}"/>
+<label for="fileType" style="width: 300px; text-align: right; display: inline-block">允许的后缀（例如 ".cpp" ）：</label>
+<input type="text" id="fileType" name="fileType" required minlength="1" maxlength="8" size="20" value="{{.FileType}}"/>
 </div>
 <div>
 <input type="radio" id="recv" name="recvOrJudge" value="recv" {{if not .Judge}}checked{{end}} onclick="ifJudge()"/>
@@ -40,7 +30,7 @@
 <input type="radio" id="judge" name="recvOrJudge" value="judge" {{if .Judge}}checked{{end}} onclick="ifJudge()"/>
 <label for="judge">内置简单评测</label>
 <p>警告：内置简单评测无任何安保措施！提交者有可能利用那些漏洞！</p>
-<p>注意：内置简单评测仅支持C++，且为单线程评测。</p>
+<p>注意：内置简单评测仅支持C++，且为单线程评测。评测结果仅供参考。</p>
 </div>
 <div>
 <input type="radio" id="fileIO" name="fileOrStd" value="fileIO" {{if .FileIO}}checked{{end}} class="judgeOpt" />
@@ -68,17 +58,21 @@
 <input type="submit" class="btn" value="提交保存">
 <div>
 </form>
+<hr/>
 <form action="/upldTest" method="post" style="display: inline-block;">
 <div>
 <label for="testpoints" style="width: 300px; text-align: right; display: inline-block">上传测试点：</label>
-<input type="file" id="testpoints" name="testpoints" accept=".zip" class="judgeOpt"/>
-<p>注意：必须为zip格式，对所有文件直接压缩而不是压缩文件夹。前缀需与真实名称一致，后面可使用数字编号。</p>
+<input type="hidden" name="tn" value="{{.Name}}" />
+<input type="file" id="testpoints" name="testpoints" accept=".zip" class="judgeOpt" required />
+<p>注意：必须为zip格式，对所有文件直接压缩而不是压缩文件夹。前缀需与真实名称一致，后面可使用数字从1开始编号。</p>
+<p>注意：.in文件代表输入，.out文件代表正确的输出。上传的文件应不大于100MB。</p>
+<p>举例：chengxin1.in/chengxin1.out</p>
 <input type="submit" class="btn" value="上传">
 </div>
 </form>
 <form method="get" action="/delTest" style="display: inline-block;">
-<input type="hidden" value="{{.RelName}}" />
-<input type="submit" class="btn" formmethod="get" value="清空">
+<input type="hidden" name="tn" value="{{.Name}}" />
+<input type="submit" class="btn" formmethod="get" value="清空上传" onclick="return confirm('确认删除上传的测试点吗？');">
 </form>
 </fieldset>
 <script>

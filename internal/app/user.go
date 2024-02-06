@@ -76,7 +76,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 				// 新建用户Data文件夹
 				err = checkDir("recv/" + r.Form["userRegName"][0])
 				if err != nil {
-					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/");</script>`))
+					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败：` + err.Error() + `");window.location.replace("/");</script>`))
 					elog.Println(err)
 					return
 				}
@@ -96,7 +96,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 					return nil
 				})
 				if err != nil {
-					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/reg");</script>`))
+					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败：` + err.Error() + `");window.location.replace("/reg");</script>`))
 					elog.Println(err)
 					return
 				}
@@ -106,7 +106,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 				return
 			} else {
 				// 其他错误
-				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，内部发生错误");window.location.replace("/reg");</script>`))
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败：` + err.Error() + `");window.location.replace("/reg");</script>`))
 				elog.Println(err)
 				return
 			}
@@ -167,7 +167,7 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 				return
 			} else {
 				// 其他错误
-				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("登录失败，内部发生错误");window.location.replace("/login");</script>`))
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("登录失败：` + err.Error() + `");window.location.replace("/login");</script>`))
 				elog.Println(err)
 				return
 			}
@@ -189,7 +189,7 @@ func fLogin(w http.ResponseWriter, r *http.Request) {
 					return e
 				})
 				if err != nil {
-					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("登录失败，内部发生错误");window.location.replace("/login");</script>`))
+					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("登录失败：` + err.Error() + `");window.location.replace("/login");</script>`))
 					elog.Println(err)
 					return
 				}
@@ -412,7 +412,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			return
 		}
 		// 删除用户目录
@@ -458,7 +458,7 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 		// 建临时库
 		tmpdb, err := buntdb.Open(":memory:")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			elog.Println(err)
 			return
 		}
@@ -466,7 +466,7 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 		fr, _ := files[0].Open()
 		err = tmpdb.Load(fr)
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			elog.Println(err)
 			return
 		}
@@ -481,7 +481,7 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 			return e
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			return
 		}
 		// 放进data库
@@ -498,7 +498,7 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入成功");window.location.replace("/listUser");</script>`))
@@ -525,7 +525,7 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 		// 建立临时库
 		tmpdb, err := buntdb.Open(":memory:")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			elog.Println(err)
 			return
 		}
@@ -534,7 +534,7 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		lst := r.Form["uname"]
 		if len(lst) == 0 {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：表单为空");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			return
 		}
 		// kv映射
@@ -554,7 +554,7 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 			return e
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			return
 		}
 		// 放进临时库
@@ -568,12 +568,12 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：内部错误");window.location.replace("/listUser");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			return
 		}
 		// 导出
-		var buf bytes.Buffer
-		err = tmpdb.Save(&buf)
+		var buf = new(bytes.Buffer)
+		err = tmpdb.Save(buf)
 		if err != nil {
 			elog.Println("fExpUser: ", err)
 			http.Error(w, err.Error(), http.StatusNotFound)

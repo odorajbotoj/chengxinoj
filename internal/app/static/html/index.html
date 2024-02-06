@@ -129,11 +129,12 @@ dlcb.addEventListener("change", () => {
 <form method="post">
 {{if not .IsStarted}}
 <div>
-<label for="ntname">名称（1～20字）：</label>
-<input type="text" id="ntname" name="ntname" form="newTask" required minlength="1" maxlength="20" size="20" />
+<label for="ntname">名称（纯英文1～20字）：</label>
+<input type="text" id="ntname" name="ntname" form="newTask" required minlength="1" maxlength="20" size="20" onkeyup="value=value.replace(/[^a-zA-Z]/g, '')" />
 <input class="btn" type="submit" form="newTask" value="新建任务" />
 <input class="btn" type="submit" formaction="/delTask" value="删除选中" onclick="return confirm('确认删除？');" />
 <input class="btn" type="submit" form="packDown" value="打包下载" />
+<input class="btn" type="submit" form="clearRecv" value="清空上传" onclick="return confirm('确认清空所有用户上传的作业？');" />
 </div>
 {{end}}
 <ul>
@@ -141,19 +142,31 @@ dlcb.addEventListener("change", () => {
 <input type="checkbox" id="taskSA" name="taskSA" value="taskSA" onclick="funcAll('taskSA', 'taskSO');" />
 <label for="taskSA">全选/全不选</label>
 </li>
+{{if .IsStarted}}
 {{range $name := .TaskList}}
 <li>
 <input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>
-<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>&nbsp&nbsp<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>
+<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>
 </li>
 {{else}}
 <li>没有任务点</li>
+{{end}}
+{{else}}
+{{range $name := .TaskList}}
+<li>
+<input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>
+<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>
+</li>
+{{else}}
+<li>没有任务点</li>
+{{end}}
 {{end}}
 </ul>
 </form>
 {{if not .IsStarted}}
 <form id="newTask" method="get" action="/newTask"></form>
 <form id="packDown" method="get" action="/packDown"></form>
+<form id="clearRecv" method="get" action="/clearRecv"></form>
 {{end}}
 </fieldset>
 
@@ -182,6 +195,7 @@ dlcb.addEventListener("change", () => {
 </fieldset>
 <fieldset id="taskList">
 <legend>任务点</legend>
+<a href="/clearSubmit" onclick="return confirm('确认清空上传的作业？')">[清空上传]</a>
 <ul>
 {{range $name := .TaskList}}
 <li><a href="/task?tn={{$name}}" target="_blank">{{$name}}</a></li>

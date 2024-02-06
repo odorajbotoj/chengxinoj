@@ -67,7 +67,7 @@ func Run() {
 		elog.Fatalln(err)
 	}
 	udb.CreateIndex("name", "user:*:info", buntdb.IndexJSON("Name"))
-	tdb.CreateIndex("taskInfo", "task:*:info", buntdb.IndexJSON("Title"))
+	tdb.CreateIndex("taskInfo", "task:*:info", buntdb.IndexJSON("Name"))
 
 	// 服务器建立
 
@@ -95,14 +95,22 @@ func Run() {
 	mux.HandleFunc("/impUser", fImpUser)   // 导入用户
 	mux.HandleFunc("/expUser", fExpUser)   // 导出用户
 
-	mux.HandleFunc("/packDown", fPackDown) // 打包下载
+	mux.HandleFunc("/packDown", fPackDown)   // 打包下载
+	mux.HandleFunc("/clearRecv", fClearRecv) // 清空上传
+
 	// mux.HandleFunc("/impContest", fImpContest)                  // 导入比赛
 	// mux.HandleFunc("/expContest", fExpContest)                  // 导出比赛
+
 	mux.HandleFunc("/task", fTask)         // 查看任务
 	mux.HandleFunc("/editTask", fEditTask) // 编辑任务
 	mux.HandleFunc("/newTask", fNewTask)   // 新建任务
 	mux.HandleFunc("/delTask", fDelTask)   // 删除任务
-	mux.HandleFunc("/submit", fSubmit)     // 用户提交
+
+	mux.HandleFunc("/upldTest", fUpldTest) // 上传测试点
+	mux.HandleFunc("/delTest", fDelTest)   // 删除测试点
+
+	mux.HandleFunc("/submit", fSubmit)           // 用户提交
+	mux.HandleFunc("/clearSubmit", fClearSubmit) // 用户清空提交
 	// mux.HandleFunc("/rk", fRk) // 排行榜
 	var srv = new(http.Server)
 	srv.Addr = cfg.Port

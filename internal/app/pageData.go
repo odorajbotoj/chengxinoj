@@ -12,6 +12,7 @@ type PageData struct {
 	UserList  []string
 	TaskList  []string
 	Task      TaskPoint
+	Stat      TaskStat
 }
 
 type UserData struct {
