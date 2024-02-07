@@ -1,6 +1,8 @@
 package app
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
@@ -65,40 +67,86 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 这里已经拿到了file和taskinfo
-		// 用户提交的数据按照用户名分类存放在 recv/ 下
-		// 先检查用户目录有没有创建
-		err = checkDir("recv/" + ud.Name + "/")
+		// 应该先校验是否内容一样
+		var ts TaskStat
+		err = rdb.View(func(tx *buntdb.Tx) error {
+			s, e := tx.Get(taskinfo.Name + ":" + ud.Name)
+			if e != nil {
+				if e != buntdb.ErrNotFound {
+					return e
+				}
+			}
+			e = json.Unmarshal([]byte(s), &ts)
+			return e
+		})
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
 			elog.Println(err)
 			return
 		}
-		// 然后看要不要子文件夹
-		pre := "recv/" + ud.Name + "/"
-		if taskinfo.SubDir {
-			pre = pre + taskinfo.Name + "/"
-			err = checkDir(pre)
+		md5h := md5.New()
+		io.Copy(md5h, file)
+		file.Seek(0, 0)
+		newMd5 := hex.EncodeToString(md5h.Sum(nil))
+		if newMd5 != ts.Md5 {
+			// 用户提交的数据按照用户名分类存放在 recv/ 下
+			// 先检查用户目录有没有创建
+			err = checkDir("recv/" + ud.Name + "/")
 			if err != nil {
 				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
 				elog.Println(err)
 				return
 			}
-		}
-		// 保存文件
-		f, err := os.OpenFile(pre+handler.Filename, os.O_WRONLY|os.O_CREATE, 0644)
-		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
-			elog.Println(err)
-			return
-		}
-		defer f.Close()
-		io.Copy(f, file)
-		// 写入提交数据库
-		// TODO
-		// 看要不要judge
-		if taskinfo.Judge {
-			log.Println("judge", taskinfo.Name)
-			// 接入worker
+			// 然后看要不要子文件夹
+			pre := "recv/" + ud.Name + "/"
+			if taskinfo.SubDir {
+				pre = pre + taskinfo.Name + "/"
+				err = checkDir(pre)
+				if err != nil {
+					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+					elog.Println(err)
+					return
+				}
+			}
+			// 保存文件
+			f, err := os.OpenFile(pre+handler.Filename, os.O_WRONLY|os.O_CREATE, 0644)
+			if err != nil {
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+				elog.Println(err)
+				return
+			}
+			defer f.Close()
+			io.Copy(f, file)
+			// 写入提交数据库
+			err = rdb.Update(func(tx *buntdb.Tx) error {
+				var t TaskStat
+				t.Md5 = newMd5
+				t.Judge = taskinfo.Judge
+				if t.Judge {
+					t.Stat = "Waiting"
+				} else {
+					t.Stat = "Submitted"
+				}
+				b, e := json.Marshal(t)
+				if e != nil {
+					return e
+				}
+				_, _, e = tx.Set(taskinfo.Name+":"+ud.Name, string(b), nil)
+				return e
+			})
+			if err != nil {
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+				elog.Println(err)
+				return
+			}
+			// 看要不要judge
+			if taskinfo.Judge {
+				/*
+					go func() {
+						judgeQueue <- JudgeTask{ud, taskinfo}
+					}()
+				*/
+			}
 		}
 		log.Println("用户 " + ud.Name + " 提交 " + taskinfo.Name)
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交成功");window.location.replace("/task?tn=` + na + `");</script>`))
@@ -128,6 +176,7 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败，当前禁止清空");window.location.replace("/");</script>`))
 			return
 		}
+		// 删除提交文件
 		err := os.RemoveAll("recv/")
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
@@ -135,6 +184,15 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		err = os.MkdirAll("recv/", 0755)
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
+			return
+		}
+		// 删除提交记录
+		err = rdb.Update(func(tx *buntdb.Tx) error {
+			return tx.DeleteAll()
+		})
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println(err)
@@ -168,7 +226,28 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败，当前禁止清空");window.location.replace("/");</script>`))
 			return
 		}
+		// 删除提交的文件
 		err := os.RemoveAll("recv/" + ud.Name + "/")
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
+			return
+		}
+		// 删除提交记录
+		err = rdb.Update(func(tx *buntdb.Tx) error {
+			keys := getTaskList()
+			for _, v := range keys {
+				_, e := tx.Delete(v + ":" + ud.Name)
+				if e != nil {
+					if e == buntdb.ErrNotFound {
+						continue
+					} else {
+						return e
+					}
+				}
+			}
+			return nil
+		})
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println(err)

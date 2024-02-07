@@ -95,7 +95,6 @@ func fTimer(w http.ResponseWriter, r *http.Request) {
 			} else { // 不限时间
 				timerStart <- -1
 			}
-			// 执行比赛初始化
 		} else if r.Method == "GET" && iss { // 结束比赛
 			timerEnd <- 0
 		}

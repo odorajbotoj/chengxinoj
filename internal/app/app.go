@@ -37,7 +37,7 @@ func sl() {
 func Run() {
 	// 监听终止信号
 	signal.Notify(signalListener, os.Interrupt)
-	wg.Add(3)
+	wg.Add(4)
 	go sl()
 
 	// 数据库
