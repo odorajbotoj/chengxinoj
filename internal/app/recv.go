@@ -10,6 +10,7 @@ import (
 	"github.com/tidwall/buntdb"
 )
 
+// 处理用户上传
 func fSubmit(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" { // 上传
 		ud, out := checkUser(r)
@@ -108,6 +109,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 清除全部用户上传
 func fClearRecv(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)
@@ -139,7 +141,7 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空成功");window.location.replace("/");</script>`))
-		log.Println("清空用户上传")
+		log.Println("清空所有用户上传及记录")
 		return
 	} else {
 		http.Error(w, "400 Bad Request", http.StatusBadRequest)
@@ -147,6 +149,7 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 用户清除个人上传
 func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)
@@ -172,7 +175,7 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空成功");window.location.replace("/");</script>`))
-		log.Println("用户 " + ud.Name + " 清空个人上传")
+		log.Println("用户 " + ud.Name + " 清空个人上传及记录")
 		return
 	} else {
 		http.Error(w, "400 Bad Request", http.StatusBadRequest)

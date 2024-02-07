@@ -86,7 +86,7 @@ func Init() {
 	}
 
 	// 检查文件夹是否存在，不存在则创建
-	err = checkDir("userdata/")
+	err = checkDir("db/")
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}

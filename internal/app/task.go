@@ -28,17 +28,13 @@ type TaskPoint struct {
 }
 
 type TaskStat struct {
-	UserName string // 用户名称
-
-	Name      string // 题目标题
-	Submitted bool   // 是否提交
-
 	Judge     bool   // 是否评测（以下内容仅在此选项为真时有意义）
-	ShowScore bool   // 显示分数
 	Stat      string // 评测状态
+	ShowScore bool   // 显示分数
 	Score     int    // 分数
 }
 
+// 任务点页面
 func fTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// 如果是GET则返回页面
@@ -98,6 +94,7 @@ func fTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 新建任务点
 func fNewTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// 如果是GET则返回页面
@@ -160,6 +157,7 @@ func fNewTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 编辑任务点
 func fEditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// 如果是GET则返回页面
@@ -276,6 +274,7 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 删除任务点
 func fDelTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		ud, out := checkUser(r)
@@ -301,7 +300,17 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：表单为空");window.location.replace("/");</script>`))
 			return
 		}
-		err := tdb.Update(func(tx *buntdb.Tx) error {
+		var err error
+		for _, v := range lst {
+			err = os.RemoveAll("tasks/" + v + "/")
+			if err != nil {
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：` + err.Error() + `");window.location.replace("/");</script>`))
+				elog.Println(err)
+				return
+			}
+			log.Println("删除测试数据：" + v)
+		}
+		err = tdb.Update(func(tx *buntdb.Tx) error {
 			s := make([]string, 0) // 待删除名单
 			e := tx.Ascend("", func(key, value string) bool {
 				ss := strings.Split(key, ":")
@@ -340,6 +349,7 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 获取任务列表
 func getTaskList() []string {
 	s := make([]string, 0)
 	err := tdb.View(func(tx *buntdb.Tx) error {
@@ -357,6 +367,7 @@ func getTaskList() []string {
 	return s
 }
 
+// 上传测试数据
 func fUpldTest(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		ud, out := checkUser(r)
@@ -409,6 +420,7 @@ func fUpldTest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 删除测试数据
 func fDelTest(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)

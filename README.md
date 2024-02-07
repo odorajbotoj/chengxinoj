@@ -6,10 +6,8 @@
 
 ## TODO
 
-+ 提交信息（用新的TaskStat实现）
++ 提交榜单（复用getTaskList，用TaskStat实现）
 
 + 评测机及队列
 
 + 管理员导入比赛/导出比赛
-
-+ 榜单

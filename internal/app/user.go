@@ -523,6 +523,13 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
+		// 接收导出列表
+		r.ParseForm()
+		lst := r.Form["uname"]
+		if len(lst) == 0 {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：表单为空");window.location.replace("/listUser");</script>`))
+			return
+		}
 		// 建立临时库
 		tmpdb, err := buntdb.Open(":memory:")
 		if err != nil {
@@ -531,13 +538,6 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer tmpdb.Close()
-		// 接收导出列表
-		r.ParseForm()
-		lst := r.Form["uname"]
-		if len(lst) == 0 {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
-			return
-		}
 		// kv映射
 		var kv = make(map[string]string)
 		// 读出数据

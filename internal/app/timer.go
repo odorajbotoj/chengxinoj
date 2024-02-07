@@ -78,10 +78,10 @@ func fTimer(w http.ResponseWriter, r *http.Request) {
 		gvm.RLock()
 		iss := isStarted
 		gvm.RUnlock()
-		if r.Method == "POST" && !iss {
+		if r.Method == "POST" && !iss { // 开始比赛
 			r.ParseForm()
 			dl := r.Form.Get("durationLimit")
-			if dl == "on" {
+			if dl == "on" { // 限制时间
 				td := r.Form.Get("timeDuration")
 				t, err := strconv.ParseInt(td, 10, 64)
 				if err != nil {
@@ -92,10 +92,11 @@ func fTimer(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				timerStart <- t
-			} else {
+			} else { // 不限时间
 				timerStart <- -1
 			}
-		} else if r.Method == "GET" && isStarted {
+			// 执行比赛初始化
+		} else if r.Method == "GET" && iss { // 结束比赛
 			timerEnd <- 0
 		}
 		http.Redirect(w, r, "/", http.StatusSeeOther)

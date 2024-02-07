@@ -134,8 +134,10 @@ dlcb.addEventListener("change", () => {
 <input class="btn" type="submit" form="newTask" value="新建任务" />
 <input class="btn" type="submit" formaction="/delTask" value="删除选中" onclick="return confirm('确认删除？');" />
 <input class="btn" type="submit" form="packDown" value="打包下载" />
-<input class="btn" type="submit" form="clearRecv" value="清空上传" onclick="return confirm('确认清空所有用户上传的作业？');" />
+<input class="btn" type="submit" form="clearRecv" value="清空上传" onclick="return confirm('确认清空所有用户上传文件及记录？');" />
 </div>
+{{else}}
+<a href="/clearSubmit" onclick="return confirm('确认清空上传文件及记录？')">[清空上传]</a>
 {{end}}
 <ul>
 <li>
@@ -195,7 +197,7 @@ dlcb.addEventListener("change", () => {
 </fieldset>
 <fieldset id="taskList">
 <legend>任务点</legend>
-<a href="/clearSubmit" onclick="return confirm('确认清空上传的作业？')">[清空上传]</a>
+<a href="/clearSubmit" onclick="return confirm('确认清空上传文件及记录？')">[清空上传]</a>
 <ul>
 {{range $name := .TaskList}}
 <li><a href="/task?tn={{$name}}" target="_blank">{{$name}}</a></li>
@@ -204,6 +206,7 @@ dlcb.addEventListener("change", () => {
 {{end}}
 </ul>
 </fieldset>
+
 </fieldset>
 </div>
 {{end}}

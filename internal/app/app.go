@@ -15,6 +15,7 @@ import (
 // 数据库
 var udb *buntdb.DB // user database
 var tdb *buntdb.DB // task database
+var rdb *buntdb.DB // recv database
 
 // waitgroup
 var wg sync.WaitGroup
@@ -40,17 +41,23 @@ func Run() {
 	go sl()
 
 	// 数据库
+	// task database
 	var err error
-	tdb, err = buntdb.Open("tasks/data.db")
+	tdb, err = buntdb.Open("db/task.db")
 	if err != nil {
 		elog.Fatalln(err)
 	}
 	defer tdb.Close()
-	udb, err = buntdb.Open("userdata/data.db")
+	tdb.Shrink()
+	tdb.CreateIndex("taskInfo", "task:*:info", buntdb.IndexJSON("Name"))
+
+	// user database
+	udb, err = buntdb.Open("db/user.db")
 	if err != nil {
 		elog.Fatalln(err)
 	}
 	defer udb.Close()
+	udb.Shrink()
 	err = udb.Update(func(tx *buntdb.Tx) error {
 		var admin User
 		admin.Name = "admin"
@@ -67,7 +74,14 @@ func Run() {
 		elog.Fatalln(err)
 	}
 	udb.CreateIndex("name", "user:*:info", buntdb.IndexJSON("Name"))
-	tdb.CreateIndex("taskInfo", "task:*:info", buntdb.IndexJSON("Name"))
+
+	// recv database
+	rdb, err = buntdb.Open("db/recv.db")
+	if err != nil {
+		elog.Fatalln(err)
+	}
+	defer rdb.Close()
+	rdb.Shrink()
 
 	// 服务器建立
 

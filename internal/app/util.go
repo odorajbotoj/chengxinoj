@@ -98,7 +98,7 @@ func in(target string, str_array []string) bool {
 func zipFile(w io.Writer, srcs ...string) error {
 	zw := zip.NewWriter(w)
 	defer zw.Close()
-	// 下面来将文件写入 zw ，因为有可能会有很多个目录及文件，所以递归处理
+	// 下面来将文件写入 zw
 	for _, src := range srcs {
 		err := filepath.WalkDir(src, func(path string, d fs.DirEntry, er error) error {
 			if er != nil {
