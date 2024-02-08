@@ -21,7 +21,7 @@ func fPackDown(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var b = new(bytes.Buffer)
-		err := zipFile(b, "recv/")
+		err := zipFile(b, "recvFiles/")
 		if err != nil {
 			elog.Println("fPackDown: ", err)
 			http.Error(w, err.Error(), http.StatusNotFound)

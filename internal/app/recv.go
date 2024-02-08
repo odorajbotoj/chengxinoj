@@ -72,7 +72,9 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 		err = rdb.View(func(tx *buntdb.Tx) error {
 			s, e := tx.Get(taskinfo.Name + ":" + ud.Name)
 			if e != nil {
-				if e != buntdb.ErrNotFound {
+				if e == buntdb.ErrNotFound {
+					return nil
+				} else {
 					return e
 				}
 			}
@@ -89,16 +91,16 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 		file.Seek(0, 0)
 		newMd5 := hex.EncodeToString(md5h.Sum(nil))
 		if newMd5 != ts.Md5 {
-			// 用户提交的数据按照用户名分类存放在 recv/ 下
+			// 用户提交的数据按照用户名分类存放在 recvFiles/ 下
 			// 先检查用户目录有没有创建
-			err = checkDir("recv/" + ud.Name + "/")
+			err = checkDir("recvFiles/" + ud.Name + "/")
 			if err != nil {
 				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
 				elog.Println(err)
 				return
 			}
 			// 然后看要不要子文件夹
-			pre := "recv/" + ud.Name + "/"
+			pre := "recvFiles/" + ud.Name + "/"
 			if taskinfo.SubDir {
 				pre = pre + taskinfo.Name + "/"
 				err = checkDir(pre)
@@ -141,11 +143,9 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			}
 			// 看要不要judge
 			if taskinfo.Judge {
-				/*
-					go func() {
-						judgeQueue <- JudgeTask{ud, taskinfo}
-					}()
-				*/
+				go func() {
+					judgeQueue <- JudgeTask{ud, taskinfo}
+				}()
 			}
 		}
 		log.Println("用户 " + ud.Name + " 提交 " + taskinfo.Name)
@@ -177,13 +177,13 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 删除提交文件
-		err := os.RemoveAll("recv/")
+		err := os.RemoveAll("recvFiles/")
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println(err)
 			return
 		}
-		err = os.MkdirAll("recv/", 0755)
+		err = os.MkdirAll("recvFiles/", 0755)
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println(err)
@@ -227,7 +227,7 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 删除提交的文件
-		err := os.RemoveAll("recv/" + ud.Name + "/")
+		err := os.RemoveAll("recvFiles/" + ud.Name + "/")
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println(err)

@@ -2,6 +2,7 @@ package app
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -178,4 +179,29 @@ func unzipFile(zipf io.ReaderAt, size int64, dst string) error {
 		file.Close()
 	}
 	return nil
+}
+
+func copyFile(src string, dst string) error {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file", src)
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
+	return err
 }

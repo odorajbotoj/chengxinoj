@@ -74,7 +74,7 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 			if err == buntdb.ErrNotFound {
 				// 说明可以注册
 				// 新建用户Data文件夹
-				err = checkDir("recv/" + r.Form["userRegName"][0])
+				err = checkDir("recvFiles/" + r.Form["userRegName"][0])
 				if err != nil {
 					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败：` + err.Error() + `");window.location.replace("/");</script>`))
 					elog.Println(err)
@@ -417,11 +417,11 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 		}
 		// 删除用户目录
 		for _, v := range lst {
-			err = os.RemoveAll("recv/" + v)
+			err = os.RemoveAll("recvFiles/" + v)
 			if err != nil {
 				elog.Println(err)
 			} else {
-				log.Println("删除：recv/" + v)
+				log.Println("删除：recvFiles/" + v)
 			}
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除成功");window.location.replace("/listUser");</script>`))

@@ -1,9 +1,8 @@
 chengxinoj
 config.json
 log.txt
-/db
-/prob
-/recv
+/recvFiles
 /send
-/test
 /tasks
+/test
+/userdb

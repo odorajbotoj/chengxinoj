@@ -12,7 +12,7 @@ import (
 
 const (
 	// 项目基本信息
-	VERSION string = "v1.0.0" // 版本号
+	VERSION string = "v0.0.1" // 版本号
 )
 
 var (
@@ -61,7 +61,8 @@ var cfg Config
 var elog *log.Logger
 
 // 正则
-var goodUserName *regexp.Regexp
+var goodUserName *regexp.Regexp // 合法用户名
+var splitLine *regexp.Regexp    // 分行
 
 func Init() {
 	// 新建elog, 专用输出错误信息
@@ -73,6 +74,7 @@ func Init() {
 
 	// 编译正则
 	goodUserName = regexp.MustCompile("^[\u4E00-\u9FA5A-Za-z0-9_]{2,20}$")
+	splitLine = regexp.MustCompile(`[\t\n\f\r]`)
 
 	// 检查配置文件
 	err = checkConfig()
@@ -86,11 +88,11 @@ func Init() {
 	}
 
 	// 检查文件夹是否存在，不存在则创建
-	err = checkDir("db/")
+	err = checkDir("userdb/")
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
-	err = checkDir("recv/")
+	err = checkDir("recvFiles/")
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}

@@ -43,7 +43,7 @@ func Run() {
 	// 数据库
 	// task database
 	var err error
-	tdb, err = buntdb.Open("db/task.db")
+	tdb, err = buntdb.Open("tasks/task.db")
 	if err != nil {
 		elog.Fatalln(err)
 	}
@@ -52,7 +52,7 @@ func Run() {
 	tdb.CreateIndex("taskInfo", "task:*:info", buntdb.IndexJSON("Name"))
 
 	// user database
-	udb, err = buntdb.Open("db/user.db")
+	udb, err = buntdb.Open("userdb/user.db")
 	if err != nil {
 		elog.Fatalln(err)
 	}
@@ -76,7 +76,7 @@ func Run() {
 	udb.CreateIndex("name", "user:*:info", buntdb.IndexJSON("Name"))
 
 	// recv database
-	rdb, err = buntdb.Open("db/recv.db")
+	rdb, err = buntdb.Open("tasks/recv.db")
 	if err != nil {
 		elog.Fatalln(err)
 	}
@@ -87,6 +87,9 @@ func Run() {
 
 	// 启动计时器
 	go timer()
+
+	// 启动judger
+	go judger()
 
 	// 注册路由
 	mux := http.NewServeMux()
@@ -112,8 +115,8 @@ func Run() {
 	mux.HandleFunc("/packDown", fPackDown)   // 打包下载
 	mux.HandleFunc("/clearRecv", fClearRecv) // 清空上传
 
-	// mux.HandleFunc("/impContest", fImpContest)                  // 导入比赛
-	// mux.HandleFunc("/expContest", fExpContest)                  // 导出比赛
+	mux.HandleFunc("/impContest", fImpContest) // 导入比赛
+	mux.HandleFunc("/expContest", fExpContest) // 导出比赛
 
 	mux.HandleFunc("/task", fTask)         // 查看任务
 	mux.HandleFunc("/editTask", fEditTask) // 编辑任务
