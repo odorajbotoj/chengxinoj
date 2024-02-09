@@ -39,10 +39,6 @@
 <label for="stdIO">标准输入输出</label>
 </div>
 <div>
-<input type="checkbox" id="showd" name="showd" value="showd" class="judgeOpt" {{if .ShowDetails}}checked{{end}} />
-<label for="showd">排行榜显示分数</label>
-</div>
-<div>
 <label for="cc" style="width: 300px; text-align: right; display: inline-block">编译器绝对路径（100字内）：</label>
 <input type="text" id="cc" name="cc" required minlength="1" maxlength="100" size="20" class="judgeOpt" value="{{.CC}}" />
 </div>

@@ -19,12 +19,11 @@ type TaskPoint struct {
 	MaxSize      int64  // 最大文件大小（字节）
 	FileType     string // 允许的后缀
 
-	Judge       bool   // 是否评测（以下内容仅在此选项为真时有意义）
-	FileIO      bool   // 文件输入输出（否则是标准输入输出）
-	ShowDetails bool   // 显示分数
-	CC          string // 编译器
-	CFlags      string // 编译选项
-	Duration    int64  // 时限（毫秒）
+	Judge    bool   // 是否评测（以下内容仅在此选项为真时有意义）
+	FileIO   bool   // 文件输入输出（否则是标准输入输出）
+	CC       string // 编译器
+	CFlags   string // 编译选项
+	Duration int64  // 时限（毫秒）
 }
 
 type TaskStat struct {
@@ -242,9 +241,6 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			t.Judge = true
 			if r.Form.Get("fileOrStd") == "fileIO" {
 				t.FileIO = true
-			}
-			if r.Form.Get("showd") == "showd" {
-				t.ShowDetails = true
 			}
 			t.CC = r.Form.Get("cc")
 			t.CFlags = r.Form.Get("cflags")
