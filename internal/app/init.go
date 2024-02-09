@@ -51,6 +51,9 @@ var EDITTASKHTML string
 //go:embed static/html/task.html
 var TASKHTML string
 
+//go:embed static/html/rk.html
+var RKHTML string
+
 //go:embed static/scripts
 var scriptsFs embed.FS
 
@@ -116,4 +119,5 @@ func Init() {
 	USERLISTHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERLISTHTML, 1)
 	EDITTASKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", EDITTASKHTML, 1)
 	TASKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", TASKHTML, 1)
+	RKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", RKHTML, 1)
 }

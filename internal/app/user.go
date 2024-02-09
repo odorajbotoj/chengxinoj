@@ -386,6 +386,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：表单为空");window.location.replace("/listUser");</script>`))
 			return
 		}
+		// 在udb里面删除
 		err := udb.Update(func(tx *buntdb.Tx) error {
 			s := make([]string, 0) // 待删除的key名单
 			e := tx.Ascend("", func(key, value string) bool {
@@ -412,6 +413,38 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if err != nil {
+			elog.Println(err)
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
+			return
+		}
+		// 在rdb里面删除
+		err = rdb.Update(func(tx *buntdb.Tx) error {
+			s := make([]string, 0) // 待删除的key名单
+			e := tx.Ascend("", func(key, value string) bool {
+				ss := strings.Split(key, ":")
+				if len(ss) != 2 {
+					return true
+				}
+				if in(ss[1], lst) {
+					s = append(s, key)
+				}
+				return true // continue iteration
+			})
+			if e != nil {
+				return e
+			}
+			for _, v := range s {
+				_, e = tx.Delete(v)
+				if e != nil {
+					return e
+				} else {
+					log.Println("删除：", v)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			elog.Println(err)
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))
 			return
 		}

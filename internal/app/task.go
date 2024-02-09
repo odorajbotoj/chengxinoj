@@ -19,20 +19,20 @@ type TaskPoint struct {
 	MaxSize      int64  // 最大文件大小（字节）
 	FileType     string // 允许的后缀
 
-	Judge     bool   // 是否评测（以下内容仅在此选项为真时有意义）
-	FileIO    bool   // 文件输入输出（否则是标准输入输出）
-	ShowScore bool   // 显示分数
-	CC        string // 编译器
-	CFlags    string // 编译选项
-	Duration  int64  // 时限（毫秒）
+	Judge       bool   // 是否评测（以下内容仅在此选项为真时有意义）
+	FileIO      bool   // 文件输入输出（否则是标准输入输出）
+	ShowDetails bool   // 显示分数
+	CC          string // 编译器
+	CFlags      string // 编译选项
+	Duration    int64  // 时限（毫秒）
 }
 
 type TaskStat struct {
-	Md5   string               // 校验和
-	Judge bool                 // 是否评测（以下内容仅在此选项为真时有意义）
-	Stat  string               // 评测状态
-	Info  string               // 输出的信息
-	Score map[string]TestPoint // 测试点状态
+	Md5     string               // 校验和
+	Judge   bool                 // 是否评测（以下内容仅在此选项为真时有意义）
+	Stat    string               // 评测状态
+	Info    string               // 输出的信息
+	Details map[string]TestPoint // 测试点状态
 }
 
 type TestPoint struct {
@@ -243,8 +243,8 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			if r.Form.Get("fileOrStd") == "fileIO" {
 				t.FileIO = true
 			}
-			if r.Form.Get("shows") == "shows" {
-				t.ShowScore = true
+			if r.Form.Get("showd") == "showd" {
+				t.ShowDetails = true
 			}
 			t.CC = r.Form.Get("cc")
 			t.CFlags = r.Form.Get("cflags")
@@ -316,6 +316,7 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Println("删除测试数据：" + v)
 		}
+		// 在tdb里面删除
 		err = tdb.Update(func(tx *buntdb.Tx) error {
 			s := make([]string, 0) // 待删除名单
 			e := tx.Ascend("", func(key, value string) bool {
@@ -324,6 +325,37 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 					return true
 				}
 				if in(ss[1], lst) {
+					s = append(s, key)
+				}
+				return true // continue iteration
+			})
+			if e != nil {
+				return e
+			}
+			for _, v := range s {
+				_, e = tx.Delete(v)
+				if e != nil {
+					return e
+				} else {
+					log.Println("删除：", v)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
+			return
+		}
+		// 在rdb里面删除
+		err = rdb.Update(func(tx *buntdb.Tx) error {
+			s := make([]string, 0) // 待删除名单
+			e := tx.Ascend("", func(key, value string) bool {
+				ss := strings.Split(key, ":")
+				if len(ss) != 2 {
+					return true
+				}
+				if in(ss[0], lst) {
 					s = append(s, key)
 				}
 				return true // continue iteration

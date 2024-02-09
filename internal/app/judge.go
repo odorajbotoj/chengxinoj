@@ -72,7 +72,9 @@ func judger() {
 				continue
 			}
 			// 执行编译，生成a.out
-			cCmd := exec.Command(jt.Task.CC, jt.Task.CFlags, "src"+jt.Task.FileType)
+			cf := strings.Split(jt.Task.CFlags, " ")
+			cf = append(cf, "src"+jt.Task.FileType)
+			cCmd := exec.Command(jt.Task.CC, cf...)
 			cCmd.Dir = "test/"
 			out, err := cCmd.CombinedOutput()
 			if err != nil {
@@ -224,7 +226,7 @@ func judger() {
 	}
 }
 
-func sumRst(uname string, tname string, stat string, info string, score map[string]TestPoint) {
+func sumRst(uname string, tname string, stat string, info string, details map[string]TestPoint) {
 	err := rdb.Update(func(tx *buntdb.Tx) error {
 		v, e := tx.Get(tname + ":" + uname)
 		if e != nil {
@@ -237,7 +239,7 @@ func sumRst(uname string, tname string, stat string, info string, score map[stri
 		}
 		ts.Stat = stat
 		ts.Info = info
-		ts.Score = score
+		ts.Details = details
 		b, e := json.Marshal(ts)
 		if e != nil {
 			return e

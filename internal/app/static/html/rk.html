@@ -1,20 +1,21 @@
 <div id="rk">
 <fieldset>
 <legend>榜单</legend>
-<!--Test-->
 <table border="1">
-    <tr>
-        <th>Header 1</th>
-        <th>Header 2</th>
-    </tr>
-    <tr>
-        <td>row 1, cell 1</td>
-        <td>row 1, cell 2</td>
-    </tr>
-    <tr>
-        <td>row 2, cell 1</td>
-        <td>row 2, cell 2</td>
-    </tr>
+<tr>
+<th>Name</th>
+{{range $v := .TaskList}}
+<th>{{$v}}</th>
+{{end}}
+</tr>
+{{range $n := .UserList}}
+<tr>
+<td>{{$n}}</td>
+{{range $t := $.TaskList}}
+<td>{{with getrst $n $t}}<a href="javascript:alert(`{{if .Info}}{{.Info}}\n{{end}}========\n{{range $k, $v := .Details}}{{$k}}# {{$v.Stat}}\n{{$v.Info}}\n----------------\n{{end}}`);">{{.Stat}}</a>{{end}}</td>
+{{end}}
+</tr>
+{{end}}
 </table>
 </fieldset>
 </div>

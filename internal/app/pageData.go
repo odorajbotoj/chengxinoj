@@ -1,18 +1,17 @@
 package app
 
 type PageData struct {
-	Title   string
-	Version string
-	UserData
-	IsStarted bool
-	CanReg    bool
-	StartTime int64
-	Duration  int64
-	SendFiles map[string]int64
-	UserList  []string
-	TaskList  []string
-	Task      TaskPoint
-	Stat      TaskStat
+	Title     string           // 标题
+	Version   string           // 版本
+	UserData                   // 用户信息
+	IsStarted bool             // 比赛是否开始
+	CanReg    bool             // 能否注册用户（非管理员）
+	StartTime int64            // 比赛开始时间
+	Duration  int64            // 比赛延续时间
+	SendFiles map[string]int64 // 下发的文件（文件名-文件大小）
+	UserList  []string         // 用户列表
+	TaskList  []string         // 任务点列表
+	Task      TaskPoint        // 任务点
 }
 
 type UserData struct {
