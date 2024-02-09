@@ -128,7 +128,9 @@ func Run() {
 
 	mux.HandleFunc("/submit", fSubmit)           // 用户提交
 	mux.HandleFunc("/clearSubmit", fClearSubmit) // 用户清空提交
-	// mux.HandleFunc("/rk", fRk) // 排行榜
+
+	mux.HandleFunc("/rk", fRk) // 排行榜
+
 	var srv = new(http.Server)
 	srv.Addr = cfg.Port
 	srv.Handler = mux

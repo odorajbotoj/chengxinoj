@@ -28,12 +28,11 @@ type TaskPoint struct {
 }
 
 type TaskStat struct {
-	Md5       string               // 校验和
-	Judge     bool                 // 是否评测（以下内容仅在此选项为真时有意义）
-	Stat      string               // 评测状态
-	Info      string               // 输出的信息
-	ShowScore bool                 // 显示分数
-	Score     map[string]TestPoint // 测试点状态
+	Md5   string               // 校验和
+	Judge bool                 // 是否评测（以下内容仅在此选项为真时有意义）
+	Stat  string               // 评测状态
+	Info  string               // 输出的信息
+	Score map[string]TestPoint // 测试点状态
 }
 
 type TestPoint struct {

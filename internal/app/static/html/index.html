@@ -67,6 +67,7 @@ function funcOne(aname, oname){
 <input class="btn" type="submit" value="导出比赛" />
 </form>
 <p>注意：上传文件大小应不大于1GB。新的比赛数据会直接覆盖旧的比赛数据。</p>
+<p>注意：导出比赛仅导出了下发文件和任务点，提交文件与记录将不被导出。</p>
 </fieldset>
 {{end}}
 
@@ -207,7 +208,10 @@ dlcb.addEventListener("change", () => {
 {{end}}
 </ul>
 </fieldset>
-
+<fieldset>
+<legend>榜单</legend>
+<button type="button" class="btn" onclick="javascript:window.open('/rk')">查看榜单</button>
+</fieldset>
 </fieldset>
 </div>
 {{end}}
