@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,10 @@ var judgeQueue = make(chan JudgeTask)
 
 // 评测函数
 func judger() {
+	var exe string = "outbin.exe"
+	if runtime.GOOS != "windows" {
+		exe = "./" + exe
+	}
 	for {
 		select {
 		case jt := <-judgeQueue:
@@ -71,8 +76,8 @@ func judger() {
 				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
-			// 执行编译，生成a.out
-			cf := strings.Split(jt.Task.CFlags, " ")
+			// 执行编译，生成outbin.exe（为了windows/unix通用）
+			cf := strings.Split(jt.Task.CFlags+" -o outbin.exe", " ")
 			cf = append(cf, "src"+jt.Task.FileType)
 			cCmd := exec.Command(jt.Task.CC, cf...)
 			cCmd.Dir = "test/"
@@ -102,7 +107,7 @@ func judger() {
 					// 执行
 					ctx, cancel := context.WithTimeout(context.Background(), time.Duration(jt.Task.Duration)*time.Millisecond) // 设置运行超时
 					defer cancel()
-					rCmd := exec.CommandContext(ctx, "./a.out") // 创建运行进程实例
+					rCmd := exec.CommandContext(ctx, exe) // 创建运行进程实例
 					rCmd.Dir = "test/"
 					_, err = rCmd.CombinedOutput()
 					if ctx.Err() == context.DeadlineExceeded { // 超时 TLE
@@ -163,7 +168,7 @@ func judger() {
 					// 执行
 					ctx, cancel := context.WithTimeout(context.Background(), time.Duration(jt.Task.Duration)*time.Millisecond) // 设置运行超时
 					defer cancel()
-					rCmd := exec.CommandContext(ctx, "./a.out") // 创建运行进程实例
+					rCmd := exec.CommandContext(ctx, exe) // 创建运行进程实例
 					rCmd.Dir = "test/"
 					rCmd.Stdin = inpFile // 输入重定向
 					outBytes, err := rCmd.CombinedOutput()

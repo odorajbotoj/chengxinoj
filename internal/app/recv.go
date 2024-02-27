@@ -111,14 +111,14 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			// 保存文件
-			f, err := os.OpenFile(pre+handler.Filename, os.O_WRONLY|os.O_CREATE, 0644)
+			f, err := os.Create(pre + handler.Filename) // 不能用OpenFile因为它不清空内容
 			if err != nil {
 				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
 				elog.Println(err)
 				return
 			}
-			defer f.Close()
 			io.Copy(f, file)
+			f.Close() // 千万不要盲目defer
 			// 写入提交数据库
 			err = rdb.Update(func(tx *buntdb.Tx) error {
 				var t TaskStat
