@@ -4,9 +4,17 @@
 
 + Beta测试中……
 
-+ 最低系统需求：Windows7 32位
++ Windows最低系统需求：Windows7 32位
+
++ **重要**：windows与macOS下judger**不工作**，此问题正在尝试解决中。**暂无其他系统测试信息**。
 
 + 项目定位：机房环境“微OJ”
+
+## 构建
+
++ 需要go 1.20+
+
++ `go build`即可。可交叉编译，理论上多平台支持。
 
 ## 使用说明
 
@@ -88,7 +96,7 @@
 
 + **建议在开始时执行`清空上传`以清理工作区。**
 
-## Third-party
+## 第三方
 
 + `md5.js` [Version 2.2 Copyright (C) Paul Johnston 1999 - 2009 | Distributed under the BSD License](http://pajhome.org.uk/crypt/md5)
 

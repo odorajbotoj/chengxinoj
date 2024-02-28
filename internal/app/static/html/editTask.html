@@ -30,7 +30,7 @@
 <input type="radio" id="judge" name="recvOrJudge" value="judge" {{if .Judge}}checked{{end}} onclick="ifJudge()"/>
 <label for="judge">内置简单评测</label>
 <p>警告：内置简单评测无任何安保措施！提交者有可能利用那些漏洞！</p>
-<p>注意：内置简单评测仅支持C++，且为单线程评测。评测结果仅供参考。</p>
+<p>注意：内置简单评测仅支持C++，且为单线程评测。评测结果仅供参考。此功能在某些系统上可能不可用。</p>
 </div>
 <div>
 <input type="radio" id="fileIO" name="fileOrStd" value="fileIO" {{if .FileIO}}checked{{end}} class="judgeOpt" />
@@ -44,7 +44,7 @@
 </div>
 <div>
 <label for="cflags" style="width: 300px; text-align: right; display: inline-block">编译选项（100字内，空格隔开）：</label>
-<input type="text" id="cflags" name="cflags" required minlength="1" maxlength="100" size="20" class="judgeOpt" value="{{.CFlags}}" />
+<input type="text" id="cflags" name="cflags" minlength="1" maxlength="100" size="20" class="judgeOpt" value="{{.CFlags}}" />
 </div>
 <div>
 <label for="duration" style="width: 300px; text-align: right; display: inline-block">时间限制（1～1000毫秒）：</label>

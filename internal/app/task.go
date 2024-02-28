@@ -23,7 +23,7 @@ type TaskPoint struct {
 	FileIO   bool   // 文件输入输出（否则是标准输入输出）
 	CC       string // 编译器
 	CFlags   string // 编译选项
-	Duration int64  // 时限（毫秒）
+	Duration int    // 时限（毫秒）
 }
 
 type TaskStat struct {
@@ -244,8 +244,8 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			}
 			t.CC = r.Form.Get("cc")
 			t.CFlags = r.Form.Get("cflags")
-			var d int64
-			d, err = strconv.ParseInt(r.Form.Get("duration"), 10, 64)
+			var d int
+			d, err = strconv.Atoi(r.Form.Get("duration"))
 			if err != nil {
 				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败：` + err.Error() + `");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
 				elog.Println(err)
