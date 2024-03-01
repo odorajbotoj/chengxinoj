@@ -28,8 +28,10 @@ var judgeQueue = make(chan JudgeTask)
 func judger() {
 	// 对windows特判
 	var exe string = "outbin.exe"
-	if runtime.GOOS != "windows" {
-		exe = "./" + exe
+	if runtime.GOOS == "windows" {
+		exe = `.\` + exe
+	} else {
+		exe = `./` + exe
 	}
 	for {
 		select {
@@ -61,6 +63,11 @@ func judger() {
 			// 获取任务点个数
 			fl := getFileList("tasks/" + jt.Task.Name + "/")
 			cnt := len(fl)
+			if cnt == 0 {
+				elog.Println("评测" + jt.Task.Name + "找不到任务点")
+				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
+				continue
+			}
 			if cnt%2 != 0 {
 				elog.Println("评测" + jt.Task.Name + "任务点个数不匹配")
 				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"任务点个数不匹配", nil)
@@ -120,7 +127,6 @@ func judger() {
 							allOK = false
 						}
 						break
-
 					}
 					// 执行
 					log.Println("测试点", i)
@@ -285,7 +291,7 @@ func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...str
 	select {
 	case <-after:
 		c.Process.Signal(syscall.SIGINT)
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 		c.Process.Kill()
 		isKilled = true
 	case e := <-done:

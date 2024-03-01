@@ -47,10 +47,11 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			elog.Println(err)
 			return
 		}
-		lm := getFileList("tasks/")
-		for k := range lm {
-			if k != "task.db" && k != "recv.db" {
-				err = os.RemoveAll("tasks/" + k)
+		list := getTaskList()
+		for _, v := range list {
+			ok, _ := exists("tasks/" + v)
+			if ok {
+				err = os.RemoveAll("tasks/" + v)
 				if err != nil {
 					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
 					elog.Println(err)
@@ -67,15 +68,7 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 		}
 		// 更新数据库
 		// 建临时库
-		tmpdb, err := buntdb.Open(":memory:")
-		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
-			elog.Println(err)
-			return
-		}
-		defer tmpdb.Close()
-		fr, _ := os.Open("task.db")
-		err = tmpdb.Load(fr)
+		tmpdb, err := buntdb.Open("task.db")
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println(err)
@@ -111,9 +104,10 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 删除拎出来的数据库文件
+		tmpdb.Close()
 		err = os.Remove("task.db")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println("fPackDown: ", err)
 			return
 		}
@@ -152,25 +146,21 @@ func fExpContest(w http.ResponseWriter, r *http.Request) {
 		// 准备压缩数据
 		var b = new(bytes.Buffer)
 		// 不压缩数据库，所以要把测试点文件单独拎出来
-		lm := getFileList("tasks/")
-		var l []string
-		for k := range lm {
-			if k != "task.db" && k != "recv.db" {
-				l = append(l, "tasks/"+k)
+		list := getTaskList()
+		var zipFList []string
+		for _, v := range list {
+			ok, _ := exists("tasks/" + v)
+			if ok {
+				zipFList = append(zipFList, "tasks/"+v)
 			}
 		}
-		l = append(l, "send/", "task.db")
-		err = zipFile(b, l...)
+		zipFList = append(zipFList, "send/", "task.db")
+		err = zipFile(b, zipFList...)
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/");</script>`))
 			elog.Println("fPackDown: ", err)
 			return
 		}
-		// http导出
-		w.Header().Set("Content-Disposition", "attachment; filename=contest.zip")
-		w.Header().Set("Content-Type", http.DetectContentType(b.Bytes()))
-		w.Header().Set("Content-Length", strconv.Itoa(b.Len()))
-		w.Write(b.Bytes())
 		// 删除拎出来的数据库文件
 		err = os.Remove("task.db")
 		if err != nil {
@@ -179,6 +169,11 @@ func fExpContest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Println("导出比赛")
+		// http导出
+		w.Header().Set("Content-Disposition", "attachment; filename=contest.zip")
+		w.Header().Set("Content-Type", http.DetectContentType(b.Bytes()))
+		w.Header().Set("Content-Length", strconv.Itoa(b.Len()))
+		w.Write(b.Bytes())
 		return
 	} else {
 		//400

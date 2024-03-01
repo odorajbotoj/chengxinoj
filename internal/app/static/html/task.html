@@ -34,6 +34,7 @@
 </fieldset>
 </fieldset>
 {{end}}
+{{if not $.IsAdmin}}
 <fieldset>
 <legend>提交</legend>
 <form action="/submit" method="post" enctype="multipart/form-data">
@@ -42,6 +43,7 @@
 <input type="submit" class="btn" value="提交" />
 </form>
 </fieldset>
+{{end}}
 {{end}}
 </fieldset>
 </div>

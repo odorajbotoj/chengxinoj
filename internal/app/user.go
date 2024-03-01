@@ -497,6 +497,7 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 		}
 		defer tmpdb.Close()
 		fr, _ := files[0].Open()
+		fr.Close()
 		err = tmpdb.Load(fr)
 		if err != nil {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/listUser");</script>`))

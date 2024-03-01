@@ -24,6 +24,10 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
 			return
 		}
+		if ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			return
+		}
 		gvm.RLock()
 		iss := isStarted
 		gvm.RUnlock()
@@ -217,6 +221,10 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 		if !ud.IsLogin {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			return
+		}
+		if ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
 		gvm.RLock()

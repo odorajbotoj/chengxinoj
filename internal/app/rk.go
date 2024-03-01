@@ -48,7 +48,7 @@ func fRk(w http.ResponseWriter, r *http.Request) {
 
 /*
 rk排序方式：
-AC越多，名字字典序靠前的排名靠前
+已提交的，AC越多，名字字典序靠前的排名靠前
 
 思路：
 获取每个人的全部AC数量，利用sort包排序（sort.SliceStable，strings.Compare）
@@ -79,6 +79,9 @@ func sumRk() []string { // getUserSorted
 			// 解码数据
 			var ts TaskStat
 			json.Unmarshal([]byte(v), &ts)
+			if ts.Stat == "Submitted" {
+				nal[nali].AC += 1 // Add 1
+			}
 			for _, tp := range ts.Details { // 遍历任务点
 				if tp.Stat == "AC" {
 					nal[nali].AC += 1 // Add 1
