@@ -147,6 +147,10 @@ func unzipFile(zipf io.ReaderAt, size int64, dst string) error {
 			return err
 		}
 		// 解压到的目标文件
+		err = os.RemoveAll(dst + filePath)
+		if err != nil {
+			return err
+		}
 		dstFile, err := os.OpenFile(dst+filePath, os.O_WRONLY|os.O_CREATE, f.Mode())
 		if err != nil {
 			return err
