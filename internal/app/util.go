@@ -85,6 +85,7 @@ func zipFile(w io.Writer, srcs ...string) error {
 	defer zw.Close()
 	// 下面来将文件写入 zw
 	for _, src := range srcs {
+		src = strings.TrimSuffix(src, "/")
 		err := filepath.WalkDir(src, func(path string, d fs.DirEntry, er error) error {
 			if er != nil {
 				return er
@@ -97,16 +98,19 @@ func zipFile(w io.Writer, srcs ...string) error {
 			if er != nil {
 				return er
 			}
-			fh.Name = strings.TrimPrefix(path, string(filepath.Separator))
+			fh.Name = filepath.ToSlash(path)
 			if fi.IsDir() {
-				fh.Name += string(filepath.Separator)
+				fh.Name += "/"
+			} else {
+				// 设置zip的文件压缩算法
+				fh.Method = zip.Deflate
 			}
 			// 在zip里面新建文件
 			w, er := zw.CreateHeader(fh)
 			if er != nil {
 				return er
 			}
-			if !fh.Mode().IsRegular() {
+			if !fh.Mode().IsRegular() || fi.IsDir() {
 				return nil
 			}
 			// 打开待压缩的文件

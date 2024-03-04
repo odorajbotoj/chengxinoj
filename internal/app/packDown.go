@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -27,6 +28,7 @@ func fPackDown(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		log.Println("打包下载")
 		w.Header().Set("Content-Disposition", "attachment; filename=recv.zip")
 		w.Header().Set("Content-Type", http.DetectContentType(b.Bytes()))
 		w.Header().Set("Content-Length", strconv.Itoa(b.Len()))
