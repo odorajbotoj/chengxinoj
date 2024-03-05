@@ -4,7 +4,7 @@
 <fieldset id="userAction">
 <legend>用户列表</legend>
 <div>
-<input type="file" id="file" name="file" form="userUpld" required />
+<input type="file" id="file" name="file" form="userUpld" accept=".db" required />
 <input class="btn" type="submit" formaction="/impUser" form="userUpld" value="导入用户" />
 <input class="btn" type="submit" formaction="/expUser" value="导出选中" />
 <input class="btn" type="submit" formaction="/delUser" value="删除选中" onclick="return confirm('确认删除？');" />

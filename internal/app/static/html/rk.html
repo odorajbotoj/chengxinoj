@@ -12,7 +12,7 @@
 <tr>
 <td>{{$n}}</td>
 {{range $t := $.TaskList}}
-<td>{{with getrst $n $t}}<a href="javascript:alert(`{{if .Info}}{{.Info}}\n{{end}}========\n{{range $k, $v := .Details}}{{$k}}# {{$v.Stat}}\n{{$v.Info}}\n----------------\n{{end}}`);">{{.Stat}}</a>{{end}}</td>
+{{with getrst $n $t}}<td style="background-color:rgba({{getcol .}})"><a href="javascript:alert(`{{if .Info}}{{.Info}}\n{{end}}========\n{{range $k, $v := .Details}}{{$k}}# {{$v.Stat}}\n{{$v.Info}}\n----------------\n{{end}}`);">{{.Stat}}</a>{{end}}</td>
 {{end}}
 </tr>
 {{end}}

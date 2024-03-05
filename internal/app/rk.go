@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"sort"
@@ -24,6 +25,7 @@ func fRk(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl, err := template.New("rk").Funcs(template.FuncMap{
 			"getrst": getrst,
+			"getcol": getcol,
 		}).Parse(RKHTML)
 		if err != nil {
 			elog.Println(err)
@@ -118,4 +120,28 @@ func getrst(name, task string) TaskStat {
 	var ts TaskStat
 	json.Unmarshal([]byte(val), &ts)
 	return ts
+}
+
+func getcol(ts TaskStat) string {
+	switch ts.Stat {
+	case "Unsubmitted":
+		return "255,0,0,0.5"
+	case "CE":
+		return "255,0,0,0.5"
+	case "CTLE":
+		return "255,0,0,0.5"
+	case "Waiting":
+		return "255,255,0,0.5"
+	case "Submitted":
+		var total, ac float32
+		for _, i := range ts.Details {
+			total++
+			if i.Stat == "AC" {
+				ac++
+			}
+		}
+		r := 0.1 + ac/total*0.4
+		return fmt.Sprintf("0,255,0,%f", r)
+	}
+	return "255,255,255,1"
 }

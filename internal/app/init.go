@@ -12,7 +12,7 @@ import (
 
 const (
 	// 项目基本信息
-	VERSION string = "v0.0.3" // 版本号
+	VERSION string = "v1.0.0" // 版本号
 )
 
 var (
