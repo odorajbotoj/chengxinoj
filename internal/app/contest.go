@@ -47,6 +47,28 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			elog.Println(err)
 			return
 		}
+		// 删除提交文件
+		err = os.RemoveAll("recvFiles/")
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
+			return
+		}
+		err = os.MkdirAll("recvFiles/", 0755)
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
+			return
+		}
+		// 删除提交记录
+		err = rdb.Update(func(tx *buntdb.Tx) error {
+			return tx.DeleteAll()
+		})
+		if err != nil {
+			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			elog.Println(err)
+			return
+		}
 		list := getTaskList()
 		for _, v := range list {
 			ok, _ := exists("tasks/" + v)
