@@ -103,15 +103,20 @@ func Init() {
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
-	err = checkDir("test/")
-	if err != nil {
-		elog.Fatalln("Init: checkDir: ", err)
-	}
 	err = checkDir("tasks/")
 	if err != nil {
 		elog.Fatalln("Init: checkDir: ", err)
 	}
 
+	// 清空test目录
+	err = os.RemoveAll("test/")
+	if err != nil {
+		elog.Fatalln("Init: rmdir test: ", err)
+	}
+	err = os.MkdirAll("test/", 0755)
+	if err != nil {
+		elog.Fatalln("Init: mkdir test: ", err)
+	}
 	// 加载网页模板
 	INDEXHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", INDEXHTML, 1)
 	USERREGHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERREGHTML, 1)

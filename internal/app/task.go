@@ -243,6 +243,11 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 				t.FileIO = true
 			}
 			t.CC = r.Form.Get("cc")
+			isCCE, err := exists(t.CC)
+			if !isCCE || err != nil {
+				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存失败：提交的编译器不存在");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
+				return
+			}
 			t.CFlags = r.Form.Get("cflags")
 			var d int
 			d, err = strconv.Atoi(r.Form.Get("duration"))
@@ -268,6 +273,9 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("保存成功");window.location.replace("/editTask?tn=` + t.Name + `");</script>`))
 		log.Println("保存任务信息 " + t.Name)
+		if t.Judge {
+			go reJudgeTask(t)
+		}
 		return
 	} else {
 		//400

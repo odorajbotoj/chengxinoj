@@ -37,15 +37,11 @@ func judger() {
 		select {
 		case jt := <-judgeQueue:
 			log.Println("评测" + jt.Task.Name + ":" + jt.User.Name)
-			// 清空test目录
-			err := os.RemoveAll("test/")
+			// 创建临时目录
+			tdn, err := os.MkdirTemp("test", "test-*-temp")
 			if err != nil {
 				elog.Println(err)
-				continue
-			}
-			err = os.MkdirAll("test/", 0755)
-			if err != nil {
-				elog.Println(err)
+				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
 			// 检查有没有测试点
@@ -77,9 +73,9 @@ func judger() {
 			// 编译
 			// 复制文件
 			if jt.Task.SubDir {
-				err = copyFile("recvFiles/"+jt.User.Name+"/"+jt.Task.Name+"/"+jt.Task.Name+jt.Task.FileType, "test/src"+jt.Task.FileType)
+				err = copyFile("recvFiles/"+jt.User.Name+"/"+jt.Task.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
 			} else {
-				err = copyFile("recvFiles/"+jt.User.Name+"/"+jt.Task.Name+jt.Task.FileType, "test/src"+jt.Task.FileType)
+				err = copyFile("recvFiles/"+jt.User.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
 			}
 			if err != nil {
 				elog.Println(err)
@@ -93,7 +89,7 @@ func judger() {
 			}
 			cf = append(cf, "src"+jt.Task.FileType, "-o", "outbin.exe")
 			log.Println("编译")
-			_, stde, iskilled, err := cmdWithTimeout(60000, nil, "test/", jt.Task.CC, cf...)
+			_, stde, iskilled, err := cmdWithTimeout(60000, nil, tdn+"/", jt.Task.CC, cf...)
 			if iskilled {
 				sumRst(jt.User.Name, jt.Task.Name, "CTLE", "compile time limit exceed", nil)
 				log.Println("CTLE")
@@ -118,19 +114,17 @@ func judger() {
 				// 文件输入输出
 				for i := 1; i <= cnt; i++ {
 					// 拷贝输入文件
-					err = copyFile(fmt.Sprintf("tasks/%s/%s%d.in", jt.Task.Name, jt.Task.Name, i), "test/"+jt.Task.Name+".in")
+					err = copyFile(fmt.Sprintf("tasks/%s/%s%d.in", jt.Task.Name, jt.Task.Name, i), tdn+"/"+jt.Task.Name+".in")
 					if err != nil {
-						if !os.IsNotExist(err) {
-							elog.Println(err)
-							sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
-							log.Println("Inner Error")
-							allOK = false
-						}
+						elog.Println(err)
+						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+						log.Println("Inner Error")
+						allOK = false
 						break
 					}
 					// 执行
 					log.Println("测试点", i)
-					_, runstde, runisk, runerr := cmdWithTimeout(jt.Task.Duration, nil, "test/", exe)
+					_, runstde, runisk, runerr := cmdWithTimeout(jt.Task.Duration, nil, tdn+"/", exe)
 					if runisk { // 超时 TLE
 						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed"}
 						log.Println("TLE")
@@ -154,7 +148,7 @@ func judger() {
 						allOK = false
 						break
 					}
-					outBytes, err := os.ReadFile(fmt.Sprintf("test/%s.out", jt.Task.Name))
+					outBytes, err := os.ReadFile(fmt.Sprintf(tdn+"/%s.out", jt.Task.Name))
 					if err != nil {
 						elog.Println(err)
 						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), m)
@@ -190,16 +184,16 @@ func judger() {
 					// 拷贝输入文件
 					inpFile, err := os.Open(fmt.Sprintf("tasks/%s/%s%d.in", jt.Task.Name, jt.Task.Name, i))
 					if err != nil {
-						if !os.IsNotExist(err) {
-							elog.Println(err)
-							sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
-							allOK = false
-						}
+						elog.Println(err)
+						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+						log.Println("Inner Error")
+						allOK = false
 						break
 					}
 					// 执行
 					log.Println("测试点", i)
-					runstdo, runstde, runisk, runerr := cmdWithTimeout(jt.Task.Duration, inpFile, "test/", exe)
+					runstdo, runstde, runisk, runerr := cmdWithTimeout(jt.Task.Duration, inpFile, tdn+"/", exe)
+					inpFile.Close()
 					if runisk { // 超时 TLE
 						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed"}
 						log.Println("TLE")
@@ -250,13 +244,8 @@ func judger() {
 			if allOK {
 				sumRst(jt.User.Name, jt.Task.Name, "Submitted", "user submitted", m)
 			}
-			// 清空test目录
-			err = os.RemoveAll("test/")
-			if err != nil {
-				elog.Println(err)
-				continue
-			}
-			err = os.MkdirAll("test/", 0755)
+			// 清空temp目录
+			err = os.RemoveAll(tdn)
 			if err != nil {
 				elog.Println(err)
 				continue
@@ -291,7 +280,7 @@ func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...str
 	select {
 	case <-after:
 		c.Process.Signal(syscall.SIGINT)
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		c.Process.Kill()
 		isKilled = true
 	case e := <-done:
@@ -326,5 +315,20 @@ func sumRst(uname string, tname string, stat string, info string, details map[st
 	})
 	if err != nil {
 		elog.Println(err)
+	}
+}
+
+func reJudgeTask(task TaskPoint) {
+	ul := getUserList()
+	for _, i := range ul {
+		var ise bool
+		if task.SubDir {
+			ise, _ = exists("recvFiles/" + i + "/" + task.Name + "/" + task.Name + task.FileType)
+		} else {
+			ise, _ = exists("recvFiles/" + i + "/" + task.Name + task.FileType)
+		}
+		if ise {
+			judgeQueue <- JudgeTask{UserData{i, true, false}, task}
+		}
 	}
 }
