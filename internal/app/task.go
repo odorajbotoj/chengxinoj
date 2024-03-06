@@ -53,12 +53,12 @@ func fTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if !iss && !ud.IsAdmin {
+		if !isStarted && !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		var tn = r.URL.Query().Get("tn")
 		var task TaskPoint
 		var s string
@@ -113,12 +113,12 @@ func fNewTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		var ntn = r.URL.Query().Get("ntname")
 		if ntn == "" {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("新建失败，表单为空");window.location.replace("/");</script>`))
@@ -176,12 +176,12 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		tmpl, err := template.New("editTask").Parse(EDITTASKHTML)
 		if err != nil {
 			elog.Println(err)
@@ -297,12 +297,12 @@ func fDelTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		// 接收删除列表
 		r.ParseForm()
 		lst := r.Form["tname"]
@@ -422,12 +422,12 @@ func fUpldTest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		r.Body = http.MaxBytesReader(w, r.Body, 100*1024*1024+1024)
 		if err := r.ParseMultipartForm(100*1024*1024 + 1024); err != nil {
 			http.Error(w, "文件过大，大于100MB", http.StatusBadRequest)
@@ -475,12 +475,12 @@ func fDelTest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		r.ParseForm() // 别忘了，否则拿到的是空的
 		na := r.Form.Get("tn")
 		if na == "" {

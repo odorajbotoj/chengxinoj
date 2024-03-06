@@ -29,12 +29,12 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if !iss {
+		if !isStarted {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败，当前禁止提交");window.location.replace("/");</script>`))
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		// 解析
 		r.Body = http.MaxBytesReader(w, r.Body, 100*1024*1024+1024)
 		if err := r.ParseMultipartForm(100*1024*1024 + 1024); err != nil {
@@ -174,12 +174,12 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if !iss && !ud.IsAdmin {
+		if !isStarted && !ud.IsAdmin {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败，当前禁止清空");window.location.replace("/");</script>`))
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		// 删除提交文件
 		err := os.RemoveAll("recvFiles/")
 		if err != nil {
@@ -228,12 +228,12 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if !iss {
+		if !isStarted {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败，当前禁止清空");window.location.replace("/");</script>`))
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		// 删除提交的文件
 		err := os.RemoveAll("recvFiles/" + ud.Name + "/")
 		if err != nil {

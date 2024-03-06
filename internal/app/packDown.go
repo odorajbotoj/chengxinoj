@@ -15,12 +15,12 @@ func fPackDown(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		var b = new(bytes.Buffer)
 		err := zipFile(b, "recvFiles/")
 		if err != nil {

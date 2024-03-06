@@ -23,12 +23,12 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		r.Body = http.MaxBytesReader(w, r.Body, 1024*1024*1024+1024)
 		if err := r.ParseMultipartForm(1024*1024*1024 + 1024); err != nil {
 			http.Error(w, "文件过大，大于1GB", http.StatusBadRequest)
@@ -152,12 +152,12 @@ func fExpContest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		// 复制数据库
 		err := copyFile("tasks/task.db", "task.db")
 		if err != nil {

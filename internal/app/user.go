@@ -47,12 +47,12 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 		// 如果是POST则注册用户
 		ud, _ := checkUser(r)
 		gvm.RLock()
-		cr := canReg
-		gvm.RUnlock()
-		if !cr && !ud.IsAdmin {
+		if !canReg && !ud.IsAdmin {
 			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("注册失败，当前禁止注册");window.location.replace("/");</script>`))
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		// 检查表单是否为空
 		r.ParseForm()
 		if len(r.Form["userRegName"]) == 0 || len(r.Form["userRegMd5"]) == 0 {

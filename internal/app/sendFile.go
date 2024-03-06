@@ -21,12 +21,12 @@ func fGetSend(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if !iss && !ud.IsAdmin {
+		if !isStarted && !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		fn := r.URL.Query().Get("fn")
 		b, err := os.ReadFile("send/" + fn)
 		if err != nil {
@@ -60,12 +60,12 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		r.ParseForm()
 		fns := r.Form["fname"]
 		if len(fns) == 0 {
@@ -102,12 +102,12 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RLock()
-		iss := isStarted
-		gvm.RUnlock()
-		if iss || !ud.IsAdmin {
+		if isStarted || !ud.IsAdmin {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			gvm.RUnlock()
 			return
 		}
+		gvm.RUnlock()
 		r.Body = http.MaxBytesReader(w, r.Body, 100*1024*1024+1024)
 		if err := r.ParseMultipartForm(100*1024*1024 + 1024); err != nil {
 			http.Error(w, "文件过大，大于100MB", http.StatusBadRequest)
