@@ -3,11 +3,7 @@
 {{if .IsAdmin}}
 {{template "tAdmin" .}}
 {{else}}
-{{if .IsStarted}}
 {{template "tUser" .}}
-{{else}}
-<ul><li>请等待比赛开始</li></ul>
-{{end}}
 {{end}}
 {{else}}
 <p style="display: inline-block;">请先</p><a href="/login">登录</a><p style="display: inline-block;">或</p><a href="/reg">注册</a>
@@ -172,12 +168,13 @@ dlcb.addEventListener("change", () => {
 {{end}}
 </fieldset>
 
+</fieldset>
+
 <fieldset>
 <legend>榜单</legend>
 <button type="button" class="btn" onclick="javascript:window.open('/rk')">查看榜单</button>
 </fieldset>
 
-</fieldset>
 </div>
 {{end}}
 
@@ -185,6 +182,7 @@ dlcb.addEventListener("change", () => {
 <div id="divUser">
 <fieldset>
 <legend>比赛</legend>
+{{if .IsStarted}}
 <fieldset id="sendFiles">
 <legend>文件</legend>
 <ul>
@@ -206,10 +204,13 @@ dlcb.addEventListener("change", () => {
 {{end}}
 </ul>
 </fieldset>
+{{else}}
+<p>请等待比赛开始。</p>
+{{end}}
+</fieldset>
 <fieldset>
 <legend>榜单</legend>
 <button type="button" class="btn" onclick="javascript:window.open('/rk')">查看榜单</button>
-</fieldset>
 </fieldset>
 </div>
 {{end}}

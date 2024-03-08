@@ -15,11 +15,11 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		gvm.RLock()
@@ -36,27 +36,27 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 		}
 		zipf, zipfh, err := r.FormFile("file")
 		if err != nil { // 出错则取消
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
 		// 删除目录
 		err = os.RemoveAll("send/")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
 		// 删除提交文件
 		err = os.RemoveAll("recvFiles/")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
 		err = os.MkdirAll("recvFiles/", 0755)
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
@@ -65,7 +65,7 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			return tx.DeleteAll()
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
@@ -75,7 +75,7 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			if ok {
 				err = os.RemoveAll("tasks/" + v)
 				if err != nil {
-					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+					alertAndRedir(w, "导入失败："+err.Error(), "/")
 					elog.Println(err)
 					return
 				}
@@ -84,7 +84,7 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 		// 重新加载目录（解压缩）
 		err = unzipFile(zipf, zipfh.Size, "./")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
@@ -92,7 +92,7 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 		// 建临时库
 		tmpdb, err := buntdb.Open("task.db")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
@@ -107,7 +107,7 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			return e
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			return
 		}
 		// 放进tdb库
@@ -122,18 +122,18 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			return
 		}
 		// 删除拎出来的数据库文件
 		tmpdb.Close()
 		err = os.Remove("task.db")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
 			elog.Println("fPackDown: ", err)
 			return
 		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入成功");window.location.replace("/");</script>`))
+		alertAndRedir(w, "导入成功", "/")
 		log.Println("导入比赛")
 		return
 	} else {
@@ -148,7 +148,11 @@ func fExpContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
+			return
+		}
+		if !ud.IsLogin {
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		gvm.RLock()
@@ -161,7 +165,7 @@ func fExpContest(w http.ResponseWriter, r *http.Request) {
 		// 复制数据库
 		err := copyFile("tasks/task.db", "task.db")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导出失败："+err.Error(), "/")
 			elog.Println("fPackDown: ", err)
 			return
 		}
@@ -179,14 +183,14 @@ func fExpContest(w http.ResponseWriter, r *http.Request) {
 		zipFList = append(zipFList, "send/", "task.db")
 		err = zipFile(b, zipFList...)
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导出失败："+err.Error(), "/")
 			elog.Println("fPackDown: ", err)
 			return
 		}
 		// 删除拎出来的数据库文件
 		err = os.Remove("task.db")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导出失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导出失败："+err.Error(), "/")
 			elog.Println("fPackDown: ", err)
 			return
 		}

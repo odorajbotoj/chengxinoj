@@ -16,7 +16,7 @@ func fRk(w http.ResponseWriter, r *http.Request) {
 		// 如果是GET则返回页面
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {

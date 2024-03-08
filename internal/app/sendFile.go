@@ -13,11 +13,11 @@ func fGetSend(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		gvm.RLock()
@@ -52,11 +52,11 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		gvm.RLock()
@@ -69,7 +69,7 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		fns := r.Form["fname"]
 		if len(fns) == 0 {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除失败：表单为空");window.location.replace("/");</script>`))
+			alertAndRedir(w, "删除失败：表单为空", "/")
 			return
 		}
 		for _, fn := range fns {
@@ -80,7 +80,7 @@ func fDelSend(w http.ResponseWriter, r *http.Request) {
 				log.Println("删除文件：" + fn)
 			}
 		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("删除成功");window.location.replace("/");</script>`))
+		alertAndRedir(w, "删除成功", "/")
 		return
 	} else {
 		//400
@@ -94,11 +94,11 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		gvm.RLock()
@@ -115,7 +115,7 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 		}
 		files, ok := r.MultipartForm.File["file"]
 		if !ok { // 出错则取消
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("导入失败：内部错误（可能提交了空的表单）");window.location.replace("/");</script>`))
+			alertAndRedir(w, "导入失败：内部错误（可能提交了空的表单）", "/")
 			return
 		}
 		for _, f := range files {
@@ -131,7 +131,7 @@ func fUpldSend(w http.ResponseWriter, r *http.Request) {
 			defer fo.Close()
 			io.Copy(fo, fr)
 		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("上传成功");window.location.replace("/");</script>`))
+		alertAndRedir(w, "上传成功", "/")
 		return
 	} else {
 		//400

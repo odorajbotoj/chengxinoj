@@ -11,7 +11,7 @@ func fPackDown(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		gvm.RLock()

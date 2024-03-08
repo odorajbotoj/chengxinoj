@@ -17,11 +17,11 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" { // 上传
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		if ud.IsAdmin {
@@ -30,7 +30,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 		gvm.RLock()
 		if !isStarted {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败，当前禁止提交");window.location.replace("/");</script>`))
+			alertAndRedir(w, "提交失败，当前禁止提交", "/")
 			gvm.RUnlock()
 			return
 		}
@@ -45,7 +45,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 		na := r.Form.Get("subFN")
 		var taskinfo TaskPoint
 		if err != nil { // 出错则取消
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+			alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 			return
 		}
 		defer file.Close()
@@ -58,16 +58,16 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			return e
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+			alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 			return
 		}
 		if handler.Size > taskinfo.MaxSize {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：文件大小超限");window.location.replace("/task?tn=` + na + `");</script>`))
+			alertAndRedir(w, "提交失败：文件大小超限", "/task?tn="+na)
 			return
 		}
 		// 检查文件名
 		if taskinfo.Name+taskinfo.FileType != handler.Filename {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：文件名不匹配");window.location.replace("/task?tn=` + na + `");</script>`))
+			alertAndRedir(w, "提交失败：文件名不匹配", "/task?tn="+na)
 			return
 		}
 		// 这里已经拿到了file和taskinfo
@@ -86,7 +86,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			return e
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+			alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 			elog.Println(err)
 			return
 		}
@@ -99,7 +99,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			// 先检查用户目录有没有创建
 			err = checkDir("recvFiles/" + ud.Name + "/")
 			if err != nil {
-				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+				alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 				elog.Println(err)
 				return
 			}
@@ -109,7 +109,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 				pre = pre + taskinfo.Name + "/"
 				err = checkDir(pre)
 				if err != nil {
-					w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+					alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 					elog.Println(err)
 					return
 				}
@@ -117,7 +117,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			// 保存文件
 			f, err := os.Create(pre + handler.Filename) // 不能用OpenFile因为它不清空内容
 			if err != nil {
-				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+				alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 				elog.Println(err)
 				return
 			}
@@ -141,7 +141,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 				return e
 			})
 			if err != nil {
-				w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交失败：` + err.Error() + `");window.location.replace("/task?tn=` + na + `");</script>`))
+				alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 				elog.Println(err)
 				return
 			}
@@ -153,7 +153,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		log.Println("用户 " + ud.Name + " 提交 " + taskinfo.Name)
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("提交成功");window.location.replace("/task?tn=` + na + `");</script>`))
+		alertAndRedir(w, "提交成功", "/task?tn="+na)
 		return
 	} else {
 		http.Error(w, "400 Bad Request", http.StatusBadRequest)
@@ -166,16 +166,16 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		gvm.RLock()
 		if !isStarted && !ud.IsAdmin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败，当前禁止清空");window.location.replace("/");</script>`))
+			alertAndRedir(w, "清空失败，当前禁止清空", "/")
 			gvm.RUnlock()
 			return
 		}
@@ -183,13 +183,13 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 		// 删除提交文件
 		err := os.RemoveAll("recvFiles/")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "清空失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
 		err = os.MkdirAll("recvFiles/", 0755)
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "清空失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
@@ -198,11 +198,11 @@ func fClearRecv(w http.ResponseWriter, r *http.Request) {
 			return tx.DeleteAll()
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "清空失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空成功");window.location.replace("/");</script>`))
+		alertAndRedir(w, "清空成功", "/")
 		log.Println("清空所有用户上传及记录")
 		return
 	} else {
@@ -216,11 +216,11 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ud, out := checkUser(r)
 		if out {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请重新登录");window.location.replace("/exit");</script>`))
+			alertAndRedir(w, "请重新登录", "/exit")
 			return
 		}
 		if !ud.IsLogin {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("请先登录");window.location.replace("/login");</script>`))
+			alertAndRedir(w, "请先登录", "/login")
 			return
 		}
 		if ud.IsAdmin {
@@ -229,7 +229,7 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 		gvm.RLock()
 		if !isStarted {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败，当前禁止清空");window.location.replace("/");</script>`))
+			alertAndRedir(w, "清空失败，当前禁止清空", "/")
 			gvm.RUnlock()
 			return
 		}
@@ -237,7 +237,7 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 		// 删除提交的文件
 		err := os.RemoveAll("recvFiles/" + ud.Name + "/")
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "清空失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
@@ -257,11 +257,11 @@ func fClearSubmit(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if err != nil {
-			w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空失败：` + err.Error() + `");window.location.replace("/");</script>`))
+			alertAndRedir(w, "清空失败："+err.Error(), "/")
 			elog.Println(err)
 			return
 		}
-		w.Write([]byte(`<!DOCTYPE html><script type="text/javascript">alert("清空成功");window.location.replace("/");</script>`))
+		alertAndRedir(w, "清空成功", "/")
 		log.Println("用户 " + ud.Name + " 清空个人上传及记录")
 		return
 	} else {
