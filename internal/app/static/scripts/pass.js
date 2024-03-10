@@ -69,3 +69,22 @@ function checkReg(){
 	name.disabled = false;
 	return false;
 }
+
+// 检查修改密码
+function checkChangePasswd(){
+	// 仅在HTML文档内搜索class中第一个元素
+	const oldp = document.querySelector(".oldPasswd");
+	const hidden = document.querySelector(".oldPassMd5");
+	// 加密旧密码
+	oldp.disabled = true;
+	hidden.value = hex_md5(oldp.value);
+	if (checkPasswd())
+	{
+		return true;
+	}
+	else
+	{
+		oldp.disabled = false;
+		return false;
+	}
+}

@@ -1,0 +1,33 @@
+<div id="divUserReg">
+  <script src="/static/scripts/md5.js" type="text/javascript"></script>
+  <script src="/static/scripts/pass.js" type="text/javascript"></script>
+  <h2>修改密码</h2>
+	<p><a href="/">[返回首页]</a></p>
+  <form id="changePasswd" action="/changePasswd" method="post" onsubmit="return checkChangePasswd();">
+    <fieldset form="userReg">
+      <legend>请输入旧密码、新密码并确认</legend>
+        <div>
+          <label>密码必须包含大小写字母和数字的组合，可以使用特殊字符，长度在6-16之间</label>
+        </div>
+        <div>
+        	<label for="oldPasswd" style="width: 100px; text-align: left; display: inline-block;">旧密码:</label>
+        	<input type="password" id="oldPasswd" class="oldPasswd" required />
+        </div>
+        <div>
+          <label for="newPasswd" style="width: 100px; text-align: left; display: inline-block;">新密码:</label>
+          <input type="password" id="newPasswd" class="passPasswd" required />
+        </div>
+        <div>
+          <label for="newPasswdConfirm" style="width: 100px; text-align: left; display: inline-block;">确认新密码:</label>
+          <input type="password" id="newPasswdConfirm" class="passConfirm" required />
+        </div>
+        <div>
+          <input type="hidden" id="oldPasswdMd5" name="oldPasswdMd5" class="oldPassMd5"/>
+          <input type="hidden" id="newPasswdMd5" name="newPasswdMd5" class="passMd5"/>
+        </div>
+        <div>
+          <input type="submit" class="btn" value="提交" />
+        </div>
+    </fieldset>
+  </form>
+</div>

@@ -96,9 +96,10 @@ func Run() {
 	mux.Handle("/static/", http.FileServer(http.FS(scriptsFs))) // 静态资源
 	mux.HandleFunc("/", fIndex)                                 // 根页面，用户主页面
 
-	mux.HandleFunc("/reg", fReg)     // 注册页面
-	mux.HandleFunc("/login", fLogin) // 登录页面
-	mux.HandleFunc("/exit", fExit)   // 退出登录
+	mux.HandleFunc("/reg", fReg)                   // 注册页面
+	mux.HandleFunc("/login", fLogin)               // 登录页面
+	mux.HandleFunc("/changePasswd", fChangePasswd) // 修改密码
+	mux.HandleFunc("/exit", fExit)                 // 退出登录
 
 	mux.HandleFunc("/getSend", fGetSend)   // 下载下发的文件
 	mux.HandleFunc("/delSend", fDelSend)   // 删除下发的文件
