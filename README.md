@@ -100,6 +100,10 @@
 
 ### 用户侧
 
+#### 修改密码
+
++ 用户可按照提示修改密码。**（管理员修改密码请编辑`config.json`并重启服务）**
+
 #### 比赛
 
 + 比赛未开始时，请耐心等待。
@@ -113,3 +117,7 @@
 + `md5.js` [Version 2.2 Copyright (C) Paul Johnston 1999 - 2009 | Distributed under the BSD License](http://pajhome.org.uk/crypt/md5)
 
 + `github.com/tidwall/buntdb` [License: MIT](https://github.com/tidwall/buntdb) 
+
+## 特别鸣谢
+
++ 江苏省镇江第一中学（“澄心”之名来源于校内澄心湖）
