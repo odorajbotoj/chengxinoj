@@ -407,7 +407,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 				if e != nil {
 					return e
 				} else {
-					log.Println("删除：", v)
+					log.Println("删除：" + v)
 				}
 			}
 			return nil
@@ -438,7 +438,7 @@ func fDelUser(w http.ResponseWriter, r *http.Request) {
 				if e != nil {
 					return e
 				} else {
-					log.Println("删除：", v)
+					log.Println("删除：" + v)
 				}
 			}
 			return nil
@@ -509,7 +509,13 @@ func fImpUser(w http.ResponseWriter, r *http.Request) {
 		// 读出数据
 		err = tmpdb.View(func(tx *buntdb.Tx) error {
 			e := tx.Ascend("", func(key, value string) bool {
-				kv[key] = value
+				ss := strings.Split(key, ":")
+				if len(ss) != 3 {
+					return true
+				}
+				if ss[0] == "user" && ss[2] == "info" {
+					kv[key] = value
+				}
 				return true // continue iteration
 			})
 			return e
@@ -576,7 +582,7 @@ func fExpUser(w http.ResponseWriter, r *http.Request) {
 		var kv = make(map[string]string)
 		// 读出数据
 		err = udb.View(func(tx *buntdb.Tx) error {
-			e := tx.Ascend("", func(key, value string) bool {
+			e := tx.Ascend("name", func(key, value string) bool {
 				ss := strings.Split(key, ":")
 				if len(ss) != 3 {
 					return true
