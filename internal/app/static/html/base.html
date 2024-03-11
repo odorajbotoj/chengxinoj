@@ -5,7 +5,41 @@
 <meta name="viewport"content="width=devie-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible"content="ie=edge">
 <title>{{with .Title}}{{.}}{{else}}澄心OJ - chengxinoj{{end}}</title>
-<style>textarea{resize:none;}.btn{background-color:dodgerblue;color:white;font-size:16px;border:0;height:30px;width:100px;border-radius:15px}a:link{color:black}a:visited{color:red}a:hover{color:orange}a:active{color:brown}fieldset{padding:8px 16px;margin:16px;border-width:2px;border-radius:4px}input{border-radius:4px}</style>
+<style>
+textarea {
+    resize: none;
+}
+.btn {
+    background-color: dodgerblue;
+    color: white;
+    font-size: 16px;
+    border: 0;
+    width: 100px;
+    height: 30px;
+    border-radius: 15px;
+}
+a:link {
+    color: black;
+}
+a:visited {
+    color: red;
+}
+a:hover {
+    color: orange;
+}
+a:active {
+    color: brown;
+}
+fieldset {
+    padding: 8px 16px;
+    margin: 16px;
+    border-width: 2px;
+    border-radius: 4px;
+}
+input {
+    border-radius: 4px;
+}
+</style>
 </head>
 <body>
 <header>
@@ -14,7 +48,36 @@
 <button type="button"class="btn"onclick="javascript:window.location.reload()">点击刷新</button>
 <p style="display: inline-block;">{{if .IsStarted}}<b id="clock"style="color: green"></b>{{else}}<b style="color: red">比赛未开始</b>{{end}}</p>
 <hr/>
-{{if .IsStarted}}<script type="text/javascript">var c=setInterval(setClock,1000);const startTime={{with .StartTime}}{{.}}{{else}}0{{end}};const duration={{with .Duration}}{{.}}{{else}}-1{{end}};function setClock(){var ti=new Date(startTime);var nti=new Date();var di=(nti-ti)/1000;if(duration>0&&di>duration){document.querySelector("#clock").style.color="red";document.querySelector("#clock").innerHTML="比赛已结束";clearInterval(c)}else{var hh=parseInt(di/3600);hh=hh<10?"0"+hh:hh;var mm=parseInt(di%3600/60);mm=mm<10?"0"+mm:mm;var ss=parseInt(di%60);ss=ss<10?"0"+ss:ss;document.querySelector("#clock").innerHTML=hh+":"+mm+":"+ss}}setClock();</script>{{end}}
+{{if .IsStarted}}
+<script type="text/javascript">
+var c=setInterval(setClock,1000);
+const startTime={{with .StartTime}}{{.}}{{else}}0{{end}};
+const duration={{with .Duration}}{{.}}{{else}}-1{{end}};
+function setClock()
+{
+    var ti=new Date(startTime);
+    var nti=new Date();
+    var di=(nti-ti)/1000;
+    if (duration>0&&di>duration)
+    {
+        document.querySelector("#clock").style.color="red";
+        document.querySelector("#clock").innerHTML="比赛已结束";
+        clearInterval(c)
+    }
+    else
+    {
+        var hh=parseInt(di/3600);
+        hh=hh<10?"0"+hh:hh;
+        var mm=parseInt(di%3600/60);
+        mm=mm<10?"0"+mm:mm;
+        var ss=parseInt(di%60);
+        ss=ss<10?"0"+ss:ss;
+        document.querySelector("#clock").innerHTML=hh+":"+mm+":"+ss;
+    }
+}
+setClock();
+</script>
+{{end}}
 </header>
 <!--REPLACE-->
 <footer align="center">

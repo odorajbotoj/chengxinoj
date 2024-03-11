@@ -8,27 +8,34 @@
 {{else}}
 <p style="display: inline-block;">请先</p><a href="/login">登录</a><p style="display: inline-block;">或</p><a href="/reg">注册</a>
 {{end}}
+<script type="text/javascript">document.title="主页 - "+document.title;</script>
 
 {{define "tAdmin"}}
 <div id="divAdmin">
 <h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
 
+{{if not .IsStarted}}
 <!-- 全选/全不选 -->
 <script type="text/javascript">
 // 代码来源于网络
-function funcAll(aname, oname){
+function funcAll(aname, oname)
+{
   var selectAll = document.getElementById(aname);
   var selectOnes = document.getElementsByClassName(oname);
-  for (var i = 0; i < selectOnes.length; i++) { //循环遍历，把全选框的值赋给每个单选框
+  for (var i = 0; i < selectOnes.length; i++)
+  { //循环遍历，把全选框的值赋给每个单选框
     selectOnes[i].checked = selectAll.checked;
   }
 }
-function funcOne(aname, oname){
+function funcOne(aname, oname)
+{
   var selectAll = document.getElementById(aname); //函数作用域，所以得再定义一遍
   var selectOnes = document.getElementsByClassName(oname);
   var isAllChecked = true; //定义一个变量作为桥梁来控制全选按钮
-  for (var i = 0; i < selectOnes.length; i++) {
-    if (selectOnes[i].checked === false) {
+  for (var i = 0; i < selectOnes.length; i++)
+  {
+    if (selectOnes[i].checked === false)
+    {
       isAllChecked = false;
       break;
     }
@@ -36,6 +43,7 @@ function funcOne(aname, oname){
   selectAll.checked = isAllChecked;
 }
 </script>
+{{end}}
 
 <!-- 用户 -->
 <fieldset id="user">
@@ -71,23 +79,49 @@ function funcOne(aname, oname){
 <fieldset id="timer">
 <legend>计时器</legend>
 <form action="/timer">
+{{if .IsStarted}}
+<input class="btn" type="submit" formmethod="get" value="结束比赛" />
+<span id="showTL"></span>
+<script type="text/javascript">
+const showTL = document.querySelector("#showTL");
+const du={{with .Duration}}{{.}}{{else}}-1{{end}};
+if (du > 0)
+{
+  var hh=parseInt(du/3600);
+  hh=hh<10?"0"+hh:hh;
+  var mm=parseInt(du%3600/60);
+  mm=mm<10?"0"+mm:mm;
+  var ss=parseInt(du%60);
+  ss=ss<10?"0"+ss:ss;
+  showTL.innerHTML = "限时"+hh+":"+mm+":"+ss;
+}
+else
+{
+  showTL.innerHTML = "不限时间";
+}
+</script>
+{{else}}
+<input class="btn" type="submit" formmethod="post" value="开始比赛" />
 <input type="checkbox" id="durationLimit" name="durationLimit" />
 <label for="durationLimit">限制时间(分钟)</label>
 <input type="number" id="timeDuration" name="timeDuration" min="1" max="300" value="240" />
-{{if .IsStarted}}<input class="btn" type="submit" formmethod="get" value="结束比赛" />{{else}}<input class="btn" type="submit" formmethod="post" value="开始比赛" />{{end}}
 <script type="text/javascript">
 const dlcb = document.querySelector("#durationLimit");
 const tdov = document.querySelector("#timeDuration");
-tdov.style.visibility = "hidden";
+tdov.style.display = "none";
 dlcb.addEventListener("change", () => {
-  if (dlcb.checked) {
-    tdov.style.visibility = "visible";
+  if (dlcb.checked)
+  {
+    tdov.style.display = "inline";
     tdov.value = "240";
-  } else {
-    tdov.style.visibility = "hidden";
+  }
+  else
+  {
+    tdov.style.display = "none";
   }
 });
 </script>
+{{end}}
 </form>
 </fieldset>
 
@@ -104,13 +138,15 @@ dlcb.addEventListener("change", () => {
 <p>注意：单次上传文件大小总和应不大于100MB。新同名文件会直接覆盖旧文件。</p>
 {{end}}
 <ul>
+{{if not .IsStarted}}
 <li>
 <input type="checkbox" id="fileSA" name="fileSA" value="fileSA" onclick="funcAll('fileSA', 'fileSO');" />
 <label for="fileSA">全选/全不选</label>
 </li>
+{{end}}
 {{range $name, $size := .SendFiles}}
 <li>
-<input type="checkbox" id="{{$name}}" name="fname" value="{{$name}}" class="fileSO" onclick="funcOne('fileSA', 'fileSO');"/>
+{{if not $.IsStarted}}<input type="checkbox" id="{{$name}}" name="fname" value="{{$name}}" class="fileSO" onclick="funcOne('fileSA', 'fileSO');"/>{{end}}
 <a href="/getSend?fn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;({{$size}}字节)
 </li>
 {{else}}
@@ -136,14 +172,16 @@ dlcb.addEventListener("change", () => {
 </div>
 {{end}}
 <ul>
+{{if not .IsStarted}}
 <li>
 <input type="checkbox" id="taskSA" name="taskSA" value="taskSA" onclick="funcAll('taskSA', 'taskSO');" />
 <label for="taskSA">全选/全不选</label>
 </li>
+{{end}}
 {{if .IsStarted}}
 {{range $name := .TaskList}}
 <li>
-<input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>
+{{if not $.IsStarted}}<input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>{{end}}
 <a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>
 </li>
 {{else}}
@@ -180,7 +218,10 @@ dlcb.addEventListener("change", () => {
 
 {{define "tUser"}}
 <div id="divUser">
-<a href="/changePasswd">[修改密码]</a>
+<fieldset>
+<legend>个人</legend>
+<button type="button" class="btn" onclick="javascript:window.location.href='/changePasswd'">修改密码</button>
+</fieldset>
 <fieldset>
 <legend>比赛</legend>
 {{if .IsStarted}}

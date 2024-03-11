@@ -71,15 +71,18 @@
 <input type="submit" class="btn" value="清空上传" onclick="return confirm('确认删除上传的测试点吗？');">
 </form>
 </fieldset>
-<script>
+<script type="text/javascript">
 var recv = document.getElementById("recv");
 var judgeOpt = document.getElementsByClassName("judgeOpt");
-for (var i = 0; i < judgeOpt.length; i++) { //循环遍历
+for (var i = 0; i < judgeOpt.length; i++)
+{ //循环遍历
   judgeOpt[i].disabled = recv.checked;
 }
 
-function ifJudge() {
-  for (var i = 0; i < judgeOpt.length; i++) { //循环遍历
+function ifJudge() 
+{
+  for (var i = 0; i < judgeOpt.length; i++)
+  { //循环遍历
     judgeOpt[i].disabled = recv.checked;
   }
 }
@@ -91,3 +94,5 @@ function ifJudge() {
 {{else}}
 <script type="text/javascript">alert("请先登录");window.location.replace("/");</script>
 {{end}}
+
+<script type="text/javascript">document.title="编辑{{.Task.Name}} - "+document.title;</script>

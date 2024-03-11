@@ -12,19 +12,24 @@
 <p>注意：上传数据文件应不大于100MB。新数据会与旧数据合并，相同名称用户数据以新的为准。</p>
 <script type="text/javascript">
 // 代码来源于网络
-function funcAll(){
+function funcAll()
+{
   var selectAll = document.getElementById("selectAll");
   var selectOnes = document.getElementsByClassName("selectOne");
-  for (var i = 0; i < selectOnes.length; i++) { //循环遍历，把全选框的值赋给每个单选框
+  for (var i = 0; i < selectOnes.length; i++)
+  { //循环遍历，把全选框的值赋给每个单选框
     selectOnes[i].checked = selectAll.checked;
   }
 }
-function funcOne(){
+function funcOne()
+{
   var selectAll = document.getElementById("selectAll"); //函数作用域，所以得再定义一遍
   var selectOnes = document.getElementsByClassName("selectOne");
   var isAllChecked = true; //定义一个变量作为桥梁来控制全选按钮
-  for (var i = 0; i < selectOnes.length; i++) {
-    if (selectOnes[i].checked === false) {
+  for (var i = 0; i < selectOnes.length; i++)
+  {
+    if (selectOnes[i].checked === false)
+    {
       isAllChecked = false;
       break;
     }
@@ -55,3 +60,4 @@ function funcOne(){
 {{else}}
 <script type="text/javascript">alert("请先登录");window.location.replace("/");</script>
 {{end}}
+<script type="text/javascript">document.title="管理用户 - "+document.title;</script>
