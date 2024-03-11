@@ -286,6 +286,11 @@ func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...str
 	case e := <-done:
 		isKilled = false
 		err = e
+	case <-stopSignal:
+		c.Process.Signal(syscall.SIGINT)
+		time.Sleep(100 * time.Millisecond)
+		c.Process.Kill()
+		isKilled = true
 	}
 	stdout := stdo.String()
 	stderr := stde.String()
