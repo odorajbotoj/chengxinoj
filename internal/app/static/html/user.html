@@ -1,15 +1,5 @@
 {{if .IsLogin}}
 {{if .IsAdmin}}
-<form method="post">
-<fieldset id="userAction">
-<legend>用户列表</legend>
-<div>
-<input type="file" id="file" name="file" form="userUpld" accept=".db" required />
-<input class="btn" type="submit" formaction="/impUser" form="userUpld" value="导入用户" />
-<input class="btn" type="submit" formaction="/expUser" value="导出选中" />
-<input class="btn" type="submit" formaction="/delUser" value="删除选中" onclick="return confirm('确认删除？');" />
-</div>
-<p>注意：上传数据文件应不大于100MB。新数据会与旧数据合并，相同名称用户数据以新的为准。</p>
 <script type="text/javascript">
 // 代码来源于网络
 function funcAll()
@@ -37,7 +27,25 @@ function funcOne()
   selectAll.checked = isAllChecked;
 }
 </script>
+<fieldset>
+<legend>用户列表</legend>
+<div>
+<button class="btn" onclick="document.getElementById('impUserModal').style.display='block'">导入用户</button>
+<div id="impUserModal" class="modal">
+<div class="modal-content">
+<form action="/impUser" method="post" enctype="multipart/form-data" style="display: inline-block;">
+<input type="file" id="file" name="file" accept=".db" required />
+<input class="btn" type="submit" value="提交" />
+</form>
+<button class="btn" onclick="document.getElementById('impUserModal').style.display='none'">关闭</button>
+<p>注意：上传数据文件应不大于100MB。新数据会与旧数据合并，相同名称用户数据以新的为准。</p>
+</div>
+</div>
+<input class="btn" type="submit" formaction="/expUser" form="userSettings" value="导出选中" />
+<input class="btn" type="submit" formaction="/delUser" form="userSettings" value="删除选中" onclick="return confirm('确认删除？');" />
+</div>
 <ul>
+<form method="post" id="userSettings">
 <li>
 <input type="checkbox" id="selectAll" name="selectAll" value="selectAll" onclick="funcAll();" />
 <label for="selectAll">全选/全不选</label>
@@ -50,10 +58,9 @@ function funcOne()
 {{else}}
 <li>没有用户</li>
 {{end}}
+</form>
 </ul>
 </fieldset>
-</form>
-<form method="post" id="userUpld" enctype="multipart/form-data"></form>
 {{else}}
 <script type="text/javascript">alert("权限不足");window.location.replace("/");</script>
 {{end}}

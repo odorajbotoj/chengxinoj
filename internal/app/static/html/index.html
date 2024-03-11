@@ -13,11 +13,11 @@
 {{define "tAdmin"}}
 <div id="divAdmin">
 <h2 style="color: red; display: inline-block;">您正处于管理模式</h2>
-
 {{if not .IsStarted}}
-<!-- 全选/全不选 -->
+<!-- js -->
 <script type="text/javascript">
 // 代码来源于网络
+// 全选/全不选
 function funcAll(aname, oname)
 {
   var selectAll = document.getElementById(aname);
@@ -42,11 +42,22 @@ function funcOne(aname, oname)
   }
   selectAll.checked = isAllChecked;
 }
+// 退出modal
+window.onclick = function(event)
+{
+  var modals = document.getElementsByClassName("modal");
+  for (var i = 0; i < modals.length; i++)
+  {
+    if (event.target == modals[i])
+    {
+      modals[i].style.display = "none";
+    }
+  }
+}
 </script>
 {{end}}
-
 <!-- 用户 -->
-<fieldset id="user">
+<fieldset>
 <legend>用户</legend>
 <button type="button" class="btn" onclick="javascript:window.location.href='/reg'">注册用户</button>
 <button type="button" class="btn" onclick="javascript:window.open('/listUser')">管理用户</button>
@@ -54,34 +65,37 @@ function funcOne(aname, oname)
 {{if .CanReg}}<input type="hidden" id="action" name="action" value="off" /><input class="btn" type="submit" value="禁用注册" />{{else}}<input type="hidden" id="action" name="action" value="on" /><input class="btn" type="submit" value="启用注册" />{{end}}
 </form>
 </fieldset>
-
 <!-- 比赛 -->
-<fieldset id="contest">
+<fieldset>
 <legend>比赛</legend>
-
 <!-- 比赛设置 -->
 {{if not .IsStarted}}
-<fieldset id="contestCfg">
+<fieldset>
 <legend>基本</legend>
+<button class="btn" onclick="document.getElementById('impContestModal').style.display='block'">导入比赛</button>
+<div id="impContestModal" class="modal">
+<div class="modal-content">
 <form action="/impContest" method="post" enctype="multipart/form-data" style="display: inline-block;">
 <input type="file" id="file" name="file" required />
-<input class="btn" type="submit" value="导入比赛" />
+<input class="btn" type="submit" value="提交" />
 </form>
+<button class="btn" onclick="document.getElementById('impContestModal').style.display='none'">关闭</button>
+<p>注意：上传文件大小应不大于1GB。新的比赛数据会直接覆盖旧的比赛数据。</p>
+</div>
+</div>
 <form action="/expContest" method="get" target="_blank" style="display: inline-block;">
 <input class="btn" type="submit" value="导出比赛" />
 </form>
-<p>注意：上传文件大小应不大于1GB。新的比赛数据会直接覆盖旧的比赛数据。</p>
 <p>注意：导出比赛仅导出了下发文件和任务点，提交文件与记录将不被导出。</p>
 </fieldset>
 {{end}}
-
 <!-- 计时器 -->
-<fieldset id="timer">
+<fieldset>
 <legend>计时器</legend>
-<form action="/timer">
 {{if .IsStarted}}
-<input class="btn" type="submit" formmethod="get" value="结束比赛" />
+<form action="/timer" method="get">
 <span id="showTL"></span>
+<input class="btn" type="submit" value="结束比赛" />
 <script type="text/javascript">
 const showTL = document.querySelector("#showTL");
 const du={{with .Duration}}{{.}}{{else}}-1{{end}};
@@ -100,44 +114,59 @@ else
   showTL.innerHTML = "不限时间";
 }
 </script>
+</form>
 {{else}}
-<input class="btn" type="submit" formmethod="post" value="开始比赛" />
+<button class="btn" onclick="document.getElementById('startContestModal').style.display='block'">开始比赛</button>
+<div id="startContestModal" class="modal">
+<div class="modal-content">
+<form action="/timer" method="post" style="display: inline-block;">
 <input type="checkbox" id="durationLimit" name="durationLimit" />
 <label for="durationLimit">限制时间(分钟)</label>
 <input type="number" id="timeDuration" name="timeDuration" min="1" max="300" value="240" />
 <script type="text/javascript">
 const dlcb = document.querySelector("#durationLimit");
 const tdov = document.querySelector("#timeDuration");
-tdov.style.display = "none";
+tdov.style.visibility = "hidden";
 dlcb.addEventListener("change", () => {
   if (dlcb.checked)
   {
-    tdov.style.display = "inline";
+    tdov.style.visibility = "visible";
     tdov.value = "240";
   }
   else
   {
-    tdov.style.display = "none";
+    tdov.style.visibility = "hidden";
   }
 });
 </script>
-{{end}}
+<input class="btn" type="submit" value="提交" />
 </form>
+<button class="btn" onclick="document.getElementById('startContestModal').style.display='none'">关闭</button>
+</div>
+</div>
+{{end}}
 </fieldset>
-
 <!-- 下发文件管理 -->
-<fieldset id="sendFiles">
+<fieldset>
 <legend>下发文件</legend>
-<form method="post">
 {{if not .IsStarted}}
 <div>
-<input type="file" id="file" name="file" form="fileUpld" required multiple />
-<input class="btn" type="submit" formaction="/upldSend" form="fileUpld" value="上传文件" />
-<input class="btn" type="submit" formaction="/delSend" value="删除选中" onclick="return confirm('确认删除？');" />
-</div>
+<button class="btn" onclick="document.getElementById('upldSendModal').style.display='block'">上传文件</button>
+<div id="upldSendModal" class="modal">
+<div class="modal-content">
+<form method="post" action="/upldSend" enctype="multipart/form-data"style="display: inline-block;">
+<input type="file" id="file" name="file" required multiple />
+<input class="btn" type="submit" value="提交" />
+</form>
+<button class="btn" onclick="document.getElementById('upldSendModal').style.display='none'">关闭</button>
 <p>注意：单次上传文件大小总和应不大于100MB。新同名文件会直接覆盖旧文件。</p>
+</div>
+</div>
+<input class="btn" type="submit" formaction="/delSend" form="files" value="删除选中" onclick="return confirm('确认删除？');" />
+</div>
 {{end}}
 <ul>
+<form method="post" id="files">
 {{if not .IsStarted}}
 <li>
 <input type="checkbox" id="fileSA" name="fileSA" value="fileSA" onclick="funcAll('fileSA', 'fileSO');" />
@@ -152,33 +181,39 @@ dlcb.addEventListener("change", () => {
 {{else}}
 <li>没有文件</li>
 {{end}}
-</ul>
 </form>
+</ul>
 {{if not .IsStarted}}<form method="post" action="/upldSend" id="fileUpld" enctype="multipart/form-data"></form>{{end}}
 </fieldset>
-
 <!-- 任务点管理 -->
-<fieldset id="tasks">
+<fieldset>
 <legend>任务点</legend>
-<form method="post">
 {{if not .IsStarted}}
 <div>
+<button class="btn" onclick="document.getElementById('newTaskModal').style.display='block'">新建任务</button>
+<div id="newTaskModal" class="modal">
+<div class="modal-content">
+<form id="newTask" method="get" action="/newTask" style="display: inline-block;">
 <label for="ntname">名称（纯英文1～20字）：</label>
-<input type="text" id="ntname" name="ntname" form="newTask" required minlength="1" maxlength="20" size="20" onkeyup="value=value.replace(/[^a-zA-Z]/g, '')" />
-<input class="btn" type="submit" form="newTask" value="新建任务" />
-<input class="btn" type="submit" formaction="/delTask" value="删除选中" onclick="return confirm('确认删除？');" />
-<input class="btn" type="submit" form="packDown" value="打包下载" />
-<input class="btn" type="submit" form="clearRecv" value="清空上传" onclick="return confirm('确认清空所有用户上传文件及记录？');" />
+<input type="text" id="ntname" name="ntname" required minlength="1" maxlength="20" size="20" onkeyup="value=value.replace(/[^a-zA-Z]/g, '')" />
+<input class="btn" type="submit" value="提交" />
+</form>
+<button class="btn" onclick="document.getElementById('newTaskModal').style.display='none'">关闭</button>
+</div>
+</div>
+<input class="btn" type="submit" form="tasks" formaction="/delTask" value="删除选中" onclick="return confirm('确认删除？');" />
+<form method="get" action="/packDown" style="display: inline-block;"><input class="btn" type="submit" value="打包下载" /></form>
+<form method="get" action="/clearRecv" style="display: inline-block;"><input class="btn" type="submit" value="清空上传" onclick="return confirm('确认清空所有用户上传文件及记录？');" /></form>
 </div>
 {{end}}
 <ul>
+<form method="post" id="tasks">
 {{if not .IsStarted}}
 <li>
 <input type="checkbox" id="taskSA" name="taskSA" value="taskSA" onclick="funcAll('taskSA', 'taskSO');" />
 <label for="taskSA">全选/全不选</label>
 </li>
 {{end}}
-{{if .IsStarted}}
 {{range $name := .TaskList}}
 <li>
 {{if not $.IsStarted}}<input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>{{end}}
@@ -187,32 +222,14 @@ dlcb.addEventListener("change", () => {
 {{else}}
 <li>没有任务点</li>
 {{end}}
-{{else}}
-{{range $name := .TaskList}}
-<li>
-<input type="checkbox" id="{{$name}}" name="tname" value="{{$name}}" class="taskSO" onclick="funcOne('taskSA', 'taskSO');"/>
-<a href="/task?tn={{$name}}" target="_blank">{{$name}}</a>&nbsp;&nbsp;<a href="/editTask?tn={{$name}}" target="_blank">[编辑]</a>
-</li>
-{{else}}
-<li>没有任务点</li>
-{{end}}
-{{end}}
-</ul>
 </form>
-{{if not .IsStarted}}
-<form id="newTask" method="get" action="/newTask"></form>
-<form id="packDown" method="get" action="/packDown"></form>
-<form id="clearRecv" method="get" action="/clearRecv"></form>
-{{end}}
+</ul>
 </fieldset>
-
 </fieldset>
-
 <fieldset>
 <legend>榜单</legend>
 <button type="button" class="btn" onclick="javascript:window.open('/rk')">查看榜单</button>
 </fieldset>
-
 </div>
 {{end}}
 
@@ -237,7 +254,7 @@ dlcb.addEventListener("change", () => {
 </fieldset>
 <fieldset id="taskList">
 <legend>任务点</legend>
-<a href="/clearSubmit" onclick="return confirm('确认清空上传文件及记录？')">[清空上传]</a>
+<form method="get" action="/clearSubmit"><input class="btn" type="submit" value="清空上传" onclick="return confirm('确认清空上传文件及记录？');" /></form>
 <ul>
 {{range $name := .TaskList}}
 <li><a href="/task?tn={{$name}}" target="_blank">{{$name}}</a></li>
