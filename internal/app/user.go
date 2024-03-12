@@ -19,9 +19,13 @@ type User struct {
 }
 
 func fReg(w http.ResponseWriter, r *http.Request) {
+	ud, _ := checkUser(r)
+	if ud.IsAdmin {
+		http.Redirect(w, r, "/regAdmin", http.StatusSeeOther)
+		return
+	}
 	if r.Method == "GET" {
 		// 如果是GET则返回页面
-		ud, _ := checkUser(r)
 		if ud.IsLogin && !ud.IsAdmin {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
@@ -41,7 +45,6 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if r.Method == "POST" {
 		// 如果是POST则注册用户
-		ud, _ := checkUser(r)
 		gvm.RLock()
 		if !canReg && !ud.IsAdmin {
 			alertAndRedir(w, "注册失败，当前禁止注册", "/")
@@ -65,6 +68,72 @@ func fReg(w http.ResponseWriter, r *http.Request) {
 			log.Printf("用户 %s 注册\n", r.Form["userRegName"][0])
 			return
 		}
+	} else {
+		// 400
+		http.Error(w, "400 Bad Request", http.StatusBadRequest)
+		return
+	}
+}
+
+func fRegAdmin(w http.ResponseWriter, r *http.Request) {
+	ud, out := checkUser(r)
+	if out {
+		alertAndRedir(w, "请重新登录", "/exit")
+		return
+	}
+	if !ud.IsLogin {
+		alertAndRedir(w, "请先登录", "/login")
+		return
+	}
+	if !ud.IsAdmin {
+		http.Error(w, "403 Forbidden", http.StatusForbidden)
+		return
+	}
+	if r.Method == "GET" {
+		// 如果是GET则返回页面
+		tmpl, err := template.New("regAdmin").Parse(USERREGADMINHTML)
+		if err != nil {
+			elog.Println(err)
+			w.Write([]byte("无法渲染页面"))
+			return
+		}
+		err = tmpl.Execute(w, getPageData(ud))
+		if err != nil {
+			elog.Println(err)
+			w.Write([]byte("无法渲染页面"))
+			return
+		}
+		return
+	} else if r.Method == "POST" {
+		// 如果是POST则注册用户
+		// 检查表单是否为空
+		r.ParseForm()
+		if len(r.Form["userRegName"]) == 0 || len(r.Form["userRegMd5"]) == 0 {
+			alertAndRedir(w, "注册失败，表单为空", "/regAdmin")
+			return
+		}
+		// 分割
+		users := splitLine.Split(r.Form.Get("userRegName"), -1)
+		if len(users) == 0 {
+			alertAndRedir(w, "注册失败，表单为空", "/regAdmin")
+			return
+		}
+		var logstr string = ""
+		for _, v := range users {
+			if v == "" {
+				continue
+			}
+			err := userReg(v, r.Form["userRegMd5"][0])
+			if err != nil {
+				logstr += "（批量）注册 " + v + " 失败：" + err.Error() + "\n"
+				elog.Println("（批量）注册 " + v + " 失败：" + err.Error())
+			} else {
+				logstr += "（批量）用户 " + v + " 注册成功\n"
+				log.Printf("（批量）用户 %s 注册成功\n", v)
+			}
+		}
+		alertAndRedir(w, logstr, "/regAdmin")
+		return
 	} else {
 		// 400
 		http.Error(w, "400 Bad Request", http.StatusBadRequest)

@@ -389,18 +389,18 @@ func fResetPasswd(w http.ResponseWriter, r *http.Request) {
 			alertAndRedir(w, "重设失败：表单为空", "/listUser")
 			return
 		}
-		var ok bool = true
+		if r.Form.Get("rstMd5") == "" {
+			alertAndRedir(w, "重设失败：密码为空", "/listUser")
+			return
+		}
 		for _, v := range lst {
 			err := setUser(v, r.Form.Get("rstMd5"))
 			if err != nil {
 				alertAndRedir(w, "重设失败："+err.Error(), "/listUser")
-				ok = false
-				break
+				return
 			}
 		}
-		if ok {
-			alertAndRedir(w, "重设成功", "/listUser")
-		}
+		alertAndRedir(w, "重设成功", "/listUser")
 		return
 	} else {
 		//400

@@ -108,6 +108,7 @@ func Run() {
 	mux.HandleFunc("/timer", fTimer) // 计时器
 
 	mux.HandleFunc("/canReg", fCanReg)           // 注册开关
+	mux.HandleFunc("/regAdmin", fRegAdmin)       // 注册页面（管理员）
 	mux.HandleFunc("/listUser", fListUser)       // 用户列表
 	mux.HandleFunc("/delUser", fDelUser)         // 删除用户
 	mux.HandleFunc("/impUser", fImpUser)         // 导入用户

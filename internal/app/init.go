@@ -57,6 +57,9 @@ var RKHTML string
 //go:embed static/html/changePasswd.html
 var CHANGEPASSWDHTML string
 
+//go:embed static/html/userRegAdmin.html
+var USERREGADMINHTML string
+
 //go:embed static/scripts
 var scriptsFs embed.FS
 
@@ -129,4 +132,5 @@ func Init() {
 	TASKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", TASKHTML, 1)
 	RKHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", RKHTML, 1)
 	CHANGEPASSWDHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", CHANGEPASSWDHTML, 1)
+	USERREGADMINHTML = strings.Replace(BASEHTML, "<!--REPLACE-->", USERREGADMINHTML, 1)
 }
