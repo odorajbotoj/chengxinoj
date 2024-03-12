@@ -12,7 +12,7 @@ import (
 
 const (
 	// 项目基本信息
-	VERSION string = "v1.0.0" // 版本号
+	VERSION string = "v1.1.0" // 版本号
 )
 
 var (
@@ -72,7 +72,7 @@ var splitLine *regexp.Regexp    // 分行
 
 func Init() {
 	// 新建elog, 专用输出错误信息
-	eLogFile, err := os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE, 0644)
+	eLogFile, err := os.Create("log.txt")
 	if err != nil {
 		log.Fatalln("Init: cannot create log file: ", err)
 	}

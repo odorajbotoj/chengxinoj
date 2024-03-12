@@ -367,3 +367,44 @@ func fCanReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func fResetPasswd(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		ud, out := checkUser(r)
+		if out {
+			alertAndRedir(w, "请重新登录", "/exit")
+			return
+		}
+		if !ud.IsLogin {
+			alertAndRedir(w, "请先登录", "/login")
+			return
+		}
+		if !ud.IsAdmin {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			return
+		}
+		r.ParseForm()
+		lst := r.Form["uname"]
+		if len(lst) == 0 {
+			alertAndRedir(w, "重设失败：表单为空", "/listUser")
+			return
+		}
+		var ok bool = true
+		for _, v := range lst {
+			err := setUser(v, r.Form.Get("rstMd5"))
+			if err != nil {
+				alertAndRedir(w, "重设失败："+err.Error(), "/listUser")
+				ok = false
+				break
+			}
+		}
+		if ok {
+			alertAndRedir(w, "重设成功", "/listUser")
+		}
+		return
+	} else {
+		//400
+		http.Error(w, "400 Bad Request", http.StatusBadRequest)
+		return
+	}
+}

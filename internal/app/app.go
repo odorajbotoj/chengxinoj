@@ -107,11 +107,12 @@ func Run() {
 
 	mux.HandleFunc("/timer", fTimer) // 计时器
 
-	mux.HandleFunc("/canReg", fCanReg)     // 注册开关
-	mux.HandleFunc("/listUser", fListUser) // 用户列表
-	mux.HandleFunc("/delUser", fDelUser)   // 删除用户
-	mux.HandleFunc("/impUser", fImpUser)   // 导入用户
-	mux.HandleFunc("/expUser", fExpUser)   // 导出用户
+	mux.HandleFunc("/canReg", fCanReg)           // 注册开关
+	mux.HandleFunc("/listUser", fListUser)       // 用户列表
+	mux.HandleFunc("/delUser", fDelUser)         // 删除用户
+	mux.HandleFunc("/impUser", fImpUser)         // 导入用户
+	mux.HandleFunc("/expUser", fExpUser)         // 导出用户
+	mux.HandleFunc("/resetPasswd", fResetPasswd) // 重设密码
 
 	mux.HandleFunc("/packDown", fPackDown)   // 打包下载
 	mux.HandleFunc("/clearRecv", fClearRecv) // 清空上传
