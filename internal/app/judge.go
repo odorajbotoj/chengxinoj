@@ -18,7 +18,7 @@ import (
 )
 
 type JudgeTask struct {
-	User UserData
+	Name string
 	Task TaskPoint
 }
 
@@ -36,24 +36,24 @@ func judger() {
 	for {
 		select {
 		case jt := <-judgeQueue:
-			log.Println("评测" + jt.Task.Name + ":" + jt.User.Name)
+			log.Println("评测" + jt.Task.Name + ":" + jt.Name)
 			// 创建临时目录
 			tdn, err := os.MkdirTemp("test", "test-*-temp")
 			if err != nil {
 				elog.Println(err)
-				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+				sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
 			// 检查有没有测试点
 			ext, err := exists("tasks/" + jt.Task.Name)
 			if err != nil {
 				elog.Println(err)
-				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+				sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
 			if !ext {
 				elog.Println("评测" + jt.Task.Name + "找不到任务点")
-				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
+				sumRst(jt.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
 				continue
 			}
 			// 获取任务点个数
@@ -61,25 +61,25 @@ func judger() {
 			cnt := len(fl)
 			if cnt == 0 {
 				elog.Println("评测" + jt.Task.Name + "找不到任务点")
-				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
+				sumRst(jt.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
 				continue
 			}
 			if cnt%2 != 0 {
 				elog.Println("评测" + jt.Task.Name + "任务点个数不匹配")
-				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"任务点个数不匹配", nil)
+				sumRst(jt.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"任务点个数不匹配", nil)
 				continue
 			}
 			cnt /= 2
 			// 编译
 			// 复制文件
 			if jt.Task.SubDir {
-				err = copyFile("recvFiles/"+jt.User.Name+"/"+jt.Task.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
+				err = copyFile("recvFiles/"+jt.Name+"/"+jt.Task.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
 			} else {
-				err = copyFile("recvFiles/"+jt.User.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
+				err = copyFile("recvFiles/"+jt.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
 			}
 			if err != nil {
 				elog.Println(err)
-				sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+				sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
 			// 执行编译，生成outbin.exe（为了windows/unix通用）
@@ -91,16 +91,16 @@ func judger() {
 			log.Println("编译")
 			_, stde, iskilled, err := cmdWithTimeout(60000, nil, tdn+"/", jt.Task.CC, cf...)
 			if iskilled {
-				sumRst(jt.User.Name, jt.Task.Name, "CTLE", "compile time limit exceed", nil)
+				sumRst(jt.Name, jt.Task.Name, "CTLE", "compile time limit exceed", nil)
 				log.Println("CTLE")
 				continue
 			}
 			if stde != "" {
-				sumRst(jt.User.Name, jt.Task.Name, "CE", stde, nil)
+				sumRst(jt.Name, jt.Task.Name, "CE", stde, nil)
 				log.Println("CE")
 				continue
 			} else if err != nil {
-				sumRst(jt.User.Name, jt.Task.Name, "CE", stde, nil)
+				sumRst(jt.Name, jt.Task.Name, "CE", stde, nil)
 				log.Println("CE")
 				continue
 			}
@@ -117,7 +117,7 @@ func judger() {
 					err = copyFile(fmt.Sprintf("tasks/%s/%s%d.in", jt.Task.Name, jt.Task.Name, i), tdn+"/"+jt.Task.Name+".in")
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -143,7 +143,7 @@ func judger() {
 					ansBytes, err := os.ReadFile(fmt.Sprintf("tasks/%s/%s%d.out", jt.Task.Name, jt.Task.Name, i))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), m)
+						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), m)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -151,7 +151,7 @@ func judger() {
 					outBytes, err := os.ReadFile(fmt.Sprintf(tdn+"/%s.out", jt.Task.Name))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), m)
+						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), m)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -185,7 +185,7 @@ func judger() {
 					inpFile, err := os.Open(fmt.Sprintf("tasks/%s/%s%d.in", jt.Task.Name, jt.Task.Name, i))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -212,7 +212,7 @@ func judger() {
 					ansBytes, err := os.ReadFile(fmt.Sprintf("tasks/%s/%s%d.out", jt.Task.Name, jt.Task.Name, i))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.User.Name, jt.Task.Name, "Inner Error", err.Error(), m)
+						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), m)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -242,7 +242,7 @@ func judger() {
 			}
 			log.Println("运行完成")
 			if allOK {
-				sumRst(jt.User.Name, jt.Task.Name, "Submitted", "user submitted", m)
+				sumRst(jt.Name, jt.Task.Name, "Submitted", "user submitted", m)
 			}
 			// 清空temp目录
 			err = os.RemoveAll(tdn)
@@ -250,7 +250,7 @@ func judger() {
 				elog.Println(err)
 				continue
 			}
-			log.Println("评测" + jt.Task.Name + ":" + jt.User.Name + "结束")
+			log.Println("评测" + jt.Task.Name + ":" + jt.Name + "结束")
 		case <-stopSignal:
 			log.Println("内置评测已停止")
 			wg.Done()
@@ -333,7 +333,7 @@ func reJudgeTask(task TaskPoint) {
 			ise, _ = exists("recvFiles/" + i + "/" + task.Name + task.FileType)
 		}
 		if ise {
-			judgeQueue <- JudgeTask{UserData{i, true, false}, task}
+			judgeQueue <- JudgeTask{i, task}
 		}
 	}
 }

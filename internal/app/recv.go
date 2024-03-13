@@ -43,12 +43,13 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 		file, handler, err := r.FormFile("submitFile")
 		na := r.Form.Get("subFN")
-		var taskinfo TaskPoint
 		if err != nil { // 出错则取消
 			alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 			return
 		}
 		defer file.Close()
+		// 取出题目信息
+		var taskinfo TaskPoint
 		err = tdb.View(func(tx *buntdb.Tx) error {
 			s, e := tx.Get("task:" + na + ":info")
 			if e != nil {
@@ -61,6 +62,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			alertAndRedir(w, "提交失败："+err.Error(), "/task?tn="+na)
 			return
 		}
+		// 检查文件大小
 		if handler.Size > taskinfo.MaxSize {
 			alertAndRedir(w, "提交失败：文件大小超限", "/task?tn="+na)
 			return
@@ -71,7 +73,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 这里已经拿到了file和taskinfo
-		// 应该先校验是否内容一样
+		// 应该先校验是否和之前提交的内容一样
 		var ts TaskStat
 		err = rdb.View(func(tx *buntdb.Tx) error {
 			s, e := tx.Get(taskinfo.Name + ":" + ud.Name)
@@ -94,6 +96,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 		io.Copy(md5h, file)
 		file.Seek(0, 0)
 		newMd5 := hex.EncodeToString(md5h.Sum(nil))
+		// 如果一致则跳过，不一致则存储
 		if newMd5 != ts.Md5 {
 			// 用户提交的数据按照用户名分类存放在 recvFiles/ 下
 			// 先检查用户目录有没有创建
@@ -148,7 +151,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			// 看要不要judge
 			if taskinfo.Judge {
 				go func() {
-					judgeQueue <- JudgeTask{ud, taskinfo}
+					judgeQueue <- JudgeTask{ud.Name, taskinfo}
 				}()
 			}
 		}
