@@ -128,7 +128,7 @@ func fNewTask(w http.ResponseWriter, r *http.Request) {
 			_, e := tx.Get("task:" + ntn + ":info")
 			return e
 		})
-		if (err == nil) || (err != nil && err != buntdb.ErrNotFound) {
+		if (err == nil) || (err != buntdb.ErrNotFound) {
 			alertAndRedir(w, "新建失败，存在同名任务点", "/")
 			return
 		}
@@ -218,11 +218,6 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 		var t TaskPoint
 		var err error
 		t.Name = r.Form.Get("tn")
-		if err != nil {
-			alertAndRedir(w, "保存失败："+err.Error(), "/editTask?tn="+t.Name)
-			elog.Println(err)
-			return
-		}
 		// 继续填充内容
 		t.Introduction = r.Form.Get("introduction")
 		if r.Form.Get("subd") == "subd" {
