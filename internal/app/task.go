@@ -37,6 +37,7 @@ type TaskStat struct {
 type TestPoint struct {
 	Stat string // 结果
 	Info string // 详情
+	Time int64  // 耗时（毫秒）
 }
 
 // 任务点页面
@@ -269,6 +270,7 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 		alertAndRedir(w, "保存成功", "/editTask?tn="+t.Name)
 		log.Println("保存任务信息 " + t.Name)
 		if t.Judge {
+			// 如果是能测试的任务点就重测
 			go reJudgeTask(t)
 		}
 		return

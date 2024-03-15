@@ -114,7 +114,7 @@ func getrst(name, task string) TaskStat {
 	})
 	if err != nil {
 		if err == buntdb.ErrNotFound {
-			return TaskStat{"", false, "Unsubmitted", "unsubmitted", nil}
+			return TaskStat{"", false, "--", "unsubmitted", nil}
 		}
 	}
 	var ts TaskStat
@@ -124,7 +124,7 @@ func getrst(name, task string) TaskStat {
 
 func getcol(ts TaskStat) string {
 	switch ts.Stat {
-	case "Unsubmitted":
+	case "--":
 		return "255,0,0,0.5"
 	case "CE":
 		return "255,0,0,0.5"
@@ -132,16 +132,14 @@ func getcol(ts TaskStat) string {
 		return "255,0,0,0.5"
 	case "Waiting":
 		return "255,255,0,0.5"
-	case "Submitted":
-		var total, ac float32
-		for _, i := range ts.Details {
-			total++
-			if i.Stat == "AC" {
-				ac++
-			}
-		}
-		r := 0.1 + ac/total*0.4
-		return fmt.Sprintf("0,255,0,%f", r)
 	}
-	return "255,255,255,1"
+	var total, ac float32
+	for _, i := range ts.Details {
+		total++
+		if i.Stat == "AC" {
+			ac++
+		}
+	}
+	r := 0.1 + ac/total*0.4
+	return fmt.Sprintf("0,255,0,%f", r)
 }

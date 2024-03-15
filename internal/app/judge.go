@@ -18,8 +18,8 @@ import (
 )
 
 type JudgeTask struct {
-	Name string
-	Task TaskPoint
+	UserName string
+	Task     TaskPoint
 }
 
 var judgeQueue = make(chan JudgeTask)
@@ -36,24 +36,24 @@ func judger() {
 	for {
 		select {
 		case jt := <-judgeQueue:
-			log.Println("评测" + jt.Task.Name + ":" + jt.Name)
+			log.Println("评测" + jt.Task.Name + ":" + jt.UserName)
 			// 创建临时目录
 			tdn, err := os.MkdirTemp("test", "test-*-temp")
 			if err != nil {
 				elog.Println(err)
-				sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+				sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
 			// 检查有没有测试点
 			ext, err := exists("tasks/" + jt.Task.Name)
 			if err != nil {
 				elog.Println(err)
-				sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+				sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
 			if !ext {
 				elog.Println("评测" + jt.Task.Name + "找不到任务点")
-				sumRst(jt.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
+				sumRst(jt.UserName, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
 				continue
 			}
 			// 获取任务点个数
@@ -61,25 +61,25 @@ func judger() {
 			cnt := len(fl)
 			if cnt == 0 {
 				elog.Println("评测" + jt.Task.Name + "找不到任务点")
-				sumRst(jt.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
+				sumRst(jt.UserName, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"找不到任务点", nil)
 				continue
 			}
 			if cnt%2 != 0 {
 				elog.Println("评测" + jt.Task.Name + "任务点个数不匹配")
-				sumRst(jt.Name, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"任务点个数不匹配", nil)
+				sumRst(jt.UserName, jt.Task.Name, "Inner Error", "评测"+jt.Task.Name+"任务点个数不匹配", nil)
 				continue
 			}
 			cnt /= 2
 			// 编译
 			// 复制文件
 			if jt.Task.SubDir {
-				err = copyFile("recvFiles/"+jt.Name+"/"+jt.Task.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
+				err = copyFile("recvFiles/"+jt.UserName+"/"+jt.Task.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
 			} else {
-				err = copyFile("recvFiles/"+jt.Name+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
+				err = copyFile("recvFiles/"+jt.UserName+"/"+jt.Task.Name+jt.Task.FileType, tdn+"/src"+jt.Task.FileType)
 			}
 			if err != nil {
 				elog.Println(err)
-				sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+				sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), nil)
 				continue
 			}
 			// 执行编译，生成outbin.exe（为了windows/unix通用）
@@ -89,18 +89,18 @@ func judger() {
 			}
 			cf = append(cf, "src"+jt.Task.FileType, "-o", "outbin.exe")
 			log.Println("编译")
-			_, stde, iskilled, err := cmdWithTimeout(60000, nil, tdn+"/", jt.Task.CC, cf...)
+			_, stde, iskilled, _, err := cmdWithTimeout(60000, nil, tdn+"/", jt.Task.CC, cf...)
 			if iskilled {
-				sumRst(jt.Name, jt.Task.Name, "CTLE", "compile time limit exceed", nil)
+				sumRst(jt.UserName, jt.Task.Name, "CTLE", "compile time limit exceed", nil)
 				log.Println("CTLE")
 				continue
 			}
 			if stde != "" {
-				sumRst(jt.Name, jt.Task.Name, "CE", stde, nil)
+				sumRst(jt.UserName, jt.Task.Name, "CE", stde, nil)
 				log.Println("CE")
 				continue
 			} else if err != nil {
-				sumRst(jt.Name, jt.Task.Name, "CE", stde, nil)
+				sumRst(jt.UserName, jt.Task.Name, "CE", stde, nil)
 				log.Println("CE")
 				continue
 			}
@@ -117,25 +117,25 @@ func judger() {
 					err = copyFile(fmt.Sprintf("tasks/%s/%s%d.in", jt.Task.Name, jt.Task.Name, i), tdn+"/"+jt.Task.Name+".in")
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+						sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), nil)
 						log.Println("Inner Error")
 						allOK = false
 						break
 					}
 					// 执行
 					log.Println("测试点", i)
-					_, runstde, runisk, runerr := cmdWithTimeout(jt.Task.Duration, nil, tdn+"/", exe)
+					_, runstde, runisk, ti, runerr := cmdWithTimeout(jt.Task.Duration, nil, tdn+"/", exe)
 					if runisk { // 超时 TLE
-						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed"}
+						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed", ti.Milliseconds()}
 						log.Println("TLE")
 						continue
 					}
 					if runstde != "" { // 运行出错 RE
-						m[strconv.Itoa(i)] = TestPoint{"RE", runstde}
+						m[strconv.Itoa(i)] = TestPoint{"RE", runstde, ti.Milliseconds()}
 						log.Println("RE")
 						continue
 					} else if runerr != nil {
-						m[strconv.Itoa(i)] = TestPoint{"RE", runerr.Error()}
+						m[strconv.Itoa(i)] = TestPoint{"RE", runerr.Error(), ti.Milliseconds()}
 						log.Println("RE")
 						continue
 					}
@@ -143,7 +143,7 @@ func judger() {
 					ansBytes, err := os.ReadFile(fmt.Sprintf("tasks/%s/%s%d.out", jt.Task.Name, jt.Task.Name, i))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), m)
+						sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), m)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -151,7 +151,7 @@ func judger() {
 					outBytes, err := os.ReadFile(fmt.Sprintf(tdn+"/%s.out", jt.Task.Name))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), m)
+						sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), m)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -164,15 +164,15 @@ func judger() {
 					ansLines := splitLine.Split(ans, -1)
 					outLines := splitLine.Split(out, -1)
 					if len(ansLines) != len(outLines) {
-						m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer"}
+						m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Milliseconds()}
 						log.Println("WA")
 						continue
 					}
-					m[strconv.Itoa(i)] = TestPoint{"AC", "accepted"}
+					m[strconv.Itoa(i)] = TestPoint{"AC", "accepted", ti.Milliseconds()}
 					log.Println("?AC")
 					for j := 0; j < len(ansLines); j++ {
 						if ansLines[j] != outLines[j] {
-							m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer"}
+							m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Milliseconds()}
 							log.Println("WA!")
 							break
 						}
@@ -185,26 +185,26 @@ func judger() {
 					inpFile, err := os.Open(fmt.Sprintf("tasks/%s/%s%d.in", jt.Task.Name, jt.Task.Name, i))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), nil)
+						sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), nil)
 						log.Println("Inner Error")
 						allOK = false
 						break
 					}
 					// 执行
 					log.Println("测试点", i)
-					runstdo, runstde, runisk, runerr := cmdWithTimeout(jt.Task.Duration, inpFile, tdn+"/", exe)
+					runstdo, runstde, runisk, ti, runerr := cmdWithTimeout(jt.Task.Duration, inpFile, tdn+"/", exe)
 					inpFile.Close()
 					if runisk { // 超时 TLE
-						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed"}
+						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed", ti.Microseconds()}
 						log.Println("TLE")
 						continue
 					}
 					if runstde != "" { // 运行出错 RE
-						m[strconv.Itoa(i)] = TestPoint{"RE", runstde}
+						m[strconv.Itoa(i)] = TestPoint{"RE", runstde, ti.Microseconds()}
 						log.Println("RE")
 						continue
 					} else if runerr != nil {
-						m[strconv.Itoa(i)] = TestPoint{"RE", runerr.Error()}
+						m[strconv.Itoa(i)] = TestPoint{"RE", runerr.Error(), ti.Microseconds()}
 						log.Println("RE")
 						continue
 					}
@@ -212,7 +212,7 @@ func judger() {
 					ansBytes, err := os.ReadFile(fmt.Sprintf("tasks/%s/%s%d.out", jt.Task.Name, jt.Task.Name, i))
 					if err != nil {
 						elog.Println(err)
-						sumRst(jt.Name, jt.Task.Name, "Inner Error", err.Error(), m)
+						sumRst(jt.UserName, jt.Task.Name, "Inner Error", err.Error(), m)
 						log.Println("Inner Error")
 						allOK = false
 						break
@@ -225,15 +225,15 @@ func judger() {
 					ansLines := splitLine.Split(ans, -1)
 					outLines := splitLine.Split(out, -1)
 					if len(ansLines) != len(outLines) {
-						m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer"}
+						m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Microseconds()}
 						log.Println("WA")
 						continue
 					}
-					m[strconv.Itoa(i)] = TestPoint{"AC", "accepted"}
+					m[strconv.Itoa(i)] = TestPoint{"AC", "accepted", ti.Microseconds()}
 					log.Println("?AC")
 					for j := 0; j < len(ansLines); j++ {
 						if ansLines[j] != outLines[j] {
-							m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer"}
+							m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Microseconds()}
 							log.Println("WA!")
 							break
 						}
@@ -242,7 +242,14 @@ func judger() {
 			}
 			log.Println("运行完成")
 			if allOK {
-				sumRst(jt.Name, jt.Task.Name, "Submitted", "user submitted", m)
+				s := "AC"
+				for _, v := range m {
+					if v.Stat != "AC" {
+						s = v.Stat
+						break
+					}
+				}
+				sumRst(jt.UserName, jt.Task.Name, s, "user submitted", m)
 			}
 			// 清空temp目录
 			err = os.RemoveAll(tdn)
@@ -250,7 +257,7 @@ func judger() {
 				elog.Println(err)
 				continue
 			}
-			log.Println("评测" + jt.Task.Name + ":" + jt.Name + "结束")
+			log.Println("评测" + jt.Task.Name + ":" + jt.UserName + "结束")
 		case <-stopSignal:
 			log.Println("内置评测已停止")
 			wg.Done()
@@ -259,7 +266,8 @@ func judger() {
 	}
 }
 
-func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...string) (string, string, bool, error) {
+// 限时执行命令
+func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...string) (string, string, bool, time.Duration, error) {
 	var stdo, stde bytes.Buffer
 	var isKilled bool
 	var err error
@@ -268,22 +276,26 @@ func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...str
 	c.Stdout = &stdo
 	c.Stderr = &stde
 	c.Dir = dir
+	var t time.Duration
+	done := make(chan error)
+	sT := time.Now()
 	err = c.Start()
 	if err != nil {
-		return "", "", false, err
+		return "", "", false, 0, err
 	}
-	done := make(chan error)
+	after := time.After(time.Duration(tout) * time.Millisecond)
 	go func() {
 		done <- c.Wait()
 	}()
-	after := time.After(time.Duration(tout) * time.Millisecond)
 	select {
 	case <-after:
 		c.Process.Signal(syscall.SIGINT)
+		t = time.Since(sT)
 		time.Sleep(100 * time.Millisecond)
 		c.Process.Kill()
 		isKilled = true
 	case e := <-done:
+		t = time.Since(sT)
 		isKilled = false
 		err = e
 	case <-stopSignal:
@@ -294,9 +306,10 @@ func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...str
 	}
 	stdout := stdo.String()
 	stderr := stde.String()
-	return stdout, stderr, isKilled, err
+	return stdout, stderr, isKilled, t, err
 }
 
+// 生成TaskStat结果并存储至RDB
 func sumRst(uname string, tname string, stat string, info string, details map[string]TestPoint) {
 	err := rdb.Update(func(tx *buntdb.Tx) error {
 		v, e := tx.Get(tname + ":" + uname)
@@ -323,6 +336,7 @@ func sumRst(uname string, tname string, stat string, info string, details map[st
 	}
 }
 
+// 重评测
 func reJudgeTask(task TaskPoint) {
 	ul := getUserList()
 	for _, i := range ul {
