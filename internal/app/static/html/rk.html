@@ -1,7 +1,7 @@
 <div id="rk">
 <fieldset>
 <legend id="top">榜单</legend>
-<table border="1">
+<table>
 <tr>
 <th>Name</th>
 {{range $v := .TaskList}}
@@ -12,7 +12,7 @@
 <tr>
 <td>{{$n}}</td>
 {{range $t := $.TaskList}}
-{{with getrst $n $t}}<td style="background-color:rgba({{getcol .}})"><a href="#{{$n}}-{{$t}}">{{.Stat}}</a>{{end}}</td>
+{{with getRst $n $t}}<td style="background-color:rgba({{getCol .}})"><a href="#{{$n}}-{{$t}}">{{.Stat}}</a>{{end}}</td>
 {{end}}
 </tr>
 {{end}}
@@ -23,11 +23,25 @@
 <legend>用户：{{$n}}</legend>
 {{range $t := $.TaskList}}
 <h3 id="{{$n}}-{{$t}}">题目：{{$t}}</h3>
-{{with getrst $n $t}}
-<pre>{{if .Info}}{{.Info}}{{end}}</pre>
+{{with getRst $n $t}}
+{{if .Info}}<pre>{{.Info}}</pre>{{end}}
+{{if .Details}}
+<table>
+<tr>
+<th>测试点</th>
+<th>状态</th>
+<th>耗时</th>
+<th>详情</th>
+</tr>
 {{range $k, $v := .Details}}
-<h4>{{$k}}# {{$v.Stat}} ({{$v.Time}}ms)</h4>
-<pre>{{$v.Info}}</pre>
+<tr>
+<td>{{$k}}#</td>
+<td style="background-color:rgba({{getPointCol .}})">{{$v.Stat}}</td>
+<td>{{$v.Time}}ms</td>
+<td><pre>{{$v.Info}}</pre></td>
+</tr>
+{{end}}
+</table>
 {{end}}
 {{end}}
 <a href="#top">回到顶部</a>

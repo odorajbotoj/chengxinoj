@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -109,7 +108,7 @@ func judger() {
 			// 循环，评测每个点
 			log.Println("运行")
 			var allOK = true
-			var m = make(map[string]TestPoint) // 储存每个点的状态
+			var m = make(map[int]TestPoint) // 储存每个点的状态
 			if jt.Task.FileIO {
 				// 文件输入输出
 				for i := 1; i <= cnt; i++ {
@@ -126,16 +125,16 @@ func judger() {
 					log.Println("测试点", i)
 					_, runstde, runisk, ti, runerr := cmdWithTimeout(jt.Task.Duration, nil, tdn+"/", exe)
 					if runisk { // 超时 TLE
-						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed", ti.Milliseconds()}
+						m[i] = TestPoint{"TLE", "time limit exceed", ti.Milliseconds()}
 						log.Println("TLE")
 						continue
 					}
 					if runstde != "" { // 运行出错 RE
-						m[strconv.Itoa(i)] = TestPoint{"RE", runstde, ti.Milliseconds()}
+						m[i] = TestPoint{"RE", runstde, ti.Milliseconds()}
 						log.Println("RE")
 						continue
 					} else if runerr != nil {
-						m[strconv.Itoa(i)] = TestPoint{"RE", runerr.Error(), ti.Milliseconds()}
+						m[i] = TestPoint{"RE", runerr.Error(), ti.Milliseconds()}
 						log.Println("RE")
 						continue
 					}
@@ -161,18 +160,22 @@ func judger() {
 					out := string(outBytes)
 					ans = strings.TrimSpace(ans)
 					out = strings.TrimSpace(out)
-					ansLines := splitLine.Split(ans, -1)
-					outLines := splitLine.Split(out, -1)
+					ansLines := strings.Split(strings.ReplaceAll(ans, "\r\n", "\n"), "\n")
+					outLines := strings.Split(strings.ReplaceAll(out, "\r\n", "\n"), "\n")
 					if len(ansLines) != len(outLines) {
-						m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Milliseconds()}
+						if len(ansLines) > len(outLines) {
+							m[i] = TestPoint{"WA", "wrong answer (too short)", ti.Microseconds()}
+						} else {
+							m[i] = TestPoint{"WA", "wrong answer (too long)", ti.Microseconds()}
+						}
 						log.Println("WA")
 						continue
 					}
-					m[strconv.Itoa(i)] = TestPoint{"AC", "accepted", ti.Milliseconds()}
+					m[i] = TestPoint{"AC", "accepted", ti.Milliseconds()}
 					log.Println("?AC")
 					for j := 0; j < len(ansLines); j++ {
 						if ansLines[j] != outLines[j] {
-							m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Milliseconds()}
+							m[i] = TestPoint{"WA", "wrong answer (expect: " + ansLines[j] + ", get: " + outLines[j] + ")", ti.Milliseconds()}
 							log.Println("WA!")
 							break
 						}
@@ -195,16 +198,16 @@ func judger() {
 					runstdo, runstde, runisk, ti, runerr := cmdWithTimeout(jt.Task.Duration, inpFile, tdn+"/", exe)
 					inpFile.Close()
 					if runisk { // 超时 TLE
-						m[strconv.Itoa(i)] = TestPoint{"TLE", "time limit exceed", ti.Microseconds()}
+						m[i] = TestPoint{"TLE", "time limit exceed", ti.Microseconds()}
 						log.Println("TLE")
 						continue
 					}
 					if runstde != "" { // 运行出错 RE
-						m[strconv.Itoa(i)] = TestPoint{"RE", runstde, ti.Microseconds()}
+						m[i] = TestPoint{"RE", runstde, ti.Microseconds()}
 						log.Println("RE")
 						continue
 					} else if runerr != nil {
-						m[strconv.Itoa(i)] = TestPoint{"RE", runerr.Error(), ti.Microseconds()}
+						m[i] = TestPoint{"RE", runerr.Error(), ti.Microseconds()}
 						log.Println("RE")
 						continue
 					}
@@ -222,18 +225,22 @@ func judger() {
 					out := runstdo
 					ans = strings.TrimSpace(ans)
 					out = strings.TrimSpace(out)
-					ansLines := splitLine.Split(ans, -1)
-					outLines := splitLine.Split(out, -1)
+					ansLines := strings.Split(strings.ReplaceAll(ans, "\r\n", "\n"), "\n")
+					outLines := strings.Split(strings.ReplaceAll(out, "\r\n", "\n"), "\n")
 					if len(ansLines) != len(outLines) {
-						m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Microseconds()}
+						if len(ansLines) > len(outLines) {
+							m[i] = TestPoint{"WA", "wrong answer (too short)", ti.Microseconds()}
+						} else {
+							m[i] = TestPoint{"WA", "wrong answer (too long)", ti.Microseconds()}
+						}
 						log.Println("WA")
 						continue
 					}
-					m[strconv.Itoa(i)] = TestPoint{"AC", "accepted", ti.Microseconds()}
+					m[i] = TestPoint{"AC", "accepted", ti.Microseconds()}
 					log.Println("?AC")
 					for j := 0; j < len(ansLines); j++ {
 						if ansLines[j] != outLines[j] {
-							m[strconv.Itoa(i)] = TestPoint{"WA", "wrong answer", ti.Microseconds()}
+							m[i] = TestPoint{"WA", "wrong answer (expect: " + ansLines[j] + ", get: " + outLines[j] + ")", ti.Microseconds()}
 							log.Println("WA!")
 							break
 						}
@@ -278,11 +285,11 @@ func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...str
 	c.Dir = dir
 	var t time.Duration
 	done := make(chan error)
-	sT := time.Now()
 	err = c.Start()
 	if err != nil {
 		return "", "", false, 0, err
 	}
+	sT := time.Now()
 	after := time.After(time.Duration(tout) * time.Millisecond)
 	go func() {
 		done <- c.Wait()
@@ -310,16 +317,21 @@ func cmdWithTimeout(tout int, inp io.Reader, dir string, cmd string, args ...str
 }
 
 // 生成TaskStat结果并存储至RDB
-func sumRst(uname string, tname string, stat string, info string, details map[string]TestPoint) {
+func sumRst(uname string, tname string, stat string, info string, details map[int]TestPoint) {
 	err := rdb.Update(func(tx *buntdb.Tx) error {
+		var ts TaskStat
 		v, e := tx.Get(tname + ":" + uname)
 		if e != nil {
-			return e
-		}
-		var ts TaskStat
-		e = json.Unmarshal([]byte(v), &ts)
-		if e != nil {
-			return e
+			if e != buntdb.ErrNotFound {
+				return e
+			} else {
+				ts.Judge = true
+			}
+		} else {
+			e = json.Unmarshal([]byte(v), &ts)
+			if e != nil {
+				return e
+			}
 		}
 		ts.Stat = stat
 		ts.Info = info

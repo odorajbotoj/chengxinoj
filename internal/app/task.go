@@ -27,11 +27,11 @@ type TaskPoint struct {
 }
 
 type TaskStat struct {
-	Md5     string               // 校验和
-	Judge   bool                 // 是否评测（以下内容仅在此选项为真时有意义）
-	Stat    string               // 评测状态
-	Info    string               // 输出的信息
-	Details map[string]TestPoint // 测试点状态
+	Md5     string            // 校验和
+	Judge   bool              // 是否评测（以下内容仅在此选项为真时有意义）
+	Stat    string            // 评测状态
+	Info    string            // 输出的信息
+	Details map[int]TestPoint // 测试点状态
 }
 
 type TestPoint struct {
@@ -449,6 +449,21 @@ func fUpldTest(w http.ResponseWriter, r *http.Request) {
 			elog.Println(err)
 			return
 		}
+		var t TaskPoint
+		err = tdb.View(func(tx *buntdb.Tx) error {
+			s, e := tx.Get("task:" + na + ":info")
+			if e != nil {
+				return e
+			}
+			e = json.Unmarshal([]byte(s), &t)
+			return e
+		})
+		if err != nil {
+			alertAndRedir(w, "上传失败："+err.Error(), "/editTask?tn="+na)
+			elog.Println(err)
+			return
+		}
+		go reJudgeTask(t)
 		alertAndRedir(w, "上传成功", "/editTask?tn="+na)
 		log.Println("上传测试点 " + na)
 		return

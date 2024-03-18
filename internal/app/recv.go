@@ -130,6 +130,7 @@ func fSubmit(w http.ResponseWriter, r *http.Request) {
 			err = rdb.Update(func(tx *buntdb.Tx) error {
 				var t TaskStat
 				t.Md5 = newMd5
+				t.Info = "user submitted"
 				t.Judge = taskinfo.Judge
 				if t.Judge {
 					t.Stat = "Waiting"

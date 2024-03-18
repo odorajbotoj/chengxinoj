@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/tidwall/buntdb"
 )
@@ -113,7 +114,7 @@ func fRegAdmin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 分割
-		users := splitLine.Split(r.Form.Get("userRegName"), -1)
+		users := strings.Split(strings.ReplaceAll(r.Form.Get("userRegName"), "\r\n", "\n"), "\n")
 		if len(users) == 0 {
 			alertAndRedir(w, "注册失败，表单为空", "/regAdmin")
 			return

@@ -24,8 +24,9 @@ func fRk(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		tmpl, err := template.New("rk").Funcs(template.FuncMap{
-			"getrst": getrst,
-			"getcol": getcol,
+			"getRst":      getRst,
+			"getCol":      getCol,
+			"getPointCol": getPointCol,
 		}).Parse(RKHTML)
 		if err != nil {
 			elog.Println(err)
@@ -105,7 +106,7 @@ func sumRk() []string { // getUserSorted
 	return ul
 }
 
-func getrst(name, task string) TaskStat {
+func getRst(name, task string) TaskStat {
 	var val string
 	var e error
 	err := rdb.View(func(tx *buntdb.Tx) error {
@@ -122,8 +123,10 @@ func getrst(name, task string) TaskStat {
 	return ts
 }
 
-func getcol(ts TaskStat) string {
+func getCol(ts TaskStat) string {
 	switch ts.Stat {
+	case "Submitted":
+		return "0,255,0,0.5"
 	case "--":
 		return "255,0,0,0.5"
 	case "CE":
@@ -142,4 +145,18 @@ func getcol(ts TaskStat) string {
 	}
 	r := 0.1 + ac/total*0.4
 	return fmt.Sprintf("0,255,0,%f", r)
+}
+
+func getPointCol(tp TestPoint) string {
+	switch tp.Stat {
+	case "AC":
+		return "0,255,0,0.5"
+	case "WA":
+		return "255,0,0,0.5"
+	case "RE":
+		return "255,165,0,0.5"
+	case "TLE":
+		return "255,255,0,0.5"
+	}
+	return "255,255,255,0"
 }
