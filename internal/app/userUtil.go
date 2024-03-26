@@ -2,7 +2,7 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/url"
 
@@ -119,7 +119,7 @@ func setUser(name, md5 string) error {
 func userReg(name, md5 string) error {
 	// 过滤非法注册、注册admin
 	if name == "admin" || !goodUserName.MatchString(name) {
-		return fmt.Errorf("非法用户名")
+		return errors.New("非法用户名")
 	}
 	// 数据操作
 	err := udb.View(func(tx *buntdb.Tx) error {
@@ -146,6 +146,6 @@ func userReg(name, md5 string) error {
 		}
 	} else {
 		// 用户已存在
-		return fmt.Errorf("用户已存在")
+		return errors.New("用户已存在")
 	}
 }

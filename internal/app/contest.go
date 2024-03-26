@@ -40,6 +40,13 @@ func fImpContest(w http.ResponseWriter, r *http.Request) {
 			elog.Println(err)
 			return
 		}
+		// 检查合法性
+		err = checkUpldContestZip(zipf, zipfh.Size)
+		if err != nil {
+			alertAndRedir(w, "导入失败："+err.Error(), "/")
+			elog.Println(err)
+			return
+		}
 		// 删除目录
 		err = os.RemoveAll("send/")
 		if err != nil {

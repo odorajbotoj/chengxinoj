@@ -9,8 +9,18 @@
 <p>{{.Name}}</p>
 </fieldset>
 <fieldset>
-<legend>简介</legend>
-<pre>{{if .Introduction}}{{.Introduction}}{{else}}（空）{{end}}</pre>
+<legend>题目</legend>
+{{if .Prob.UseHTML}}
+<div>{{(getFileStr .Prob.HTMLName) | unescaped}}</div>
+{{else}}
+{{if .Prob.Title}}<fieldset><legend>标题</legend>{{.Prob.Title}}</fieldset>{{end}}
+{{if .Prob.Background}}<fieldset><legend>背景</legend>{{.Prob.Background | unescaped}}</fieldset>{{end}}
+{{if .Prob.Introduction}}<fieldset><legend>描述</legend>{{.Prob.Introduction | unescaped}}</fieldset>{{end}}
+{{if .Prob.Input}}<fieldset><legend>输入提示</legend>{{.Prob.Input | unescaped}}</fieldset>{{end}}
+{{if .Prob.Output}}<fieldset><legend>输出提示</legend>{{.Prob.Output | unescaped}}</fieldset>{{end}}
+{{if .Prob.InCase}}<fieldset><legend>输入样例</legend><pre>{{.Prob.InCase}}</pre></fieldset>{{end}}
+{{if .Prob.OutCase}}<fieldset><legend>输出样例</legend><pre>{{.Prob.OutCase}}</pre></fieldset>{{end}}
+{{end}}
 </fieldset>
 <fieldset>
 <legend>最大源文件大小（字节）</legend>

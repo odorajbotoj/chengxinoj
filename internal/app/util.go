@@ -2,7 +2,8 @@ package app
 
 import (
 	"archive/zip"
-	"fmt"
+	"errors"
+	"html/template"
 	"io"
 	"io/fs"
 	"net/http"
@@ -58,6 +59,39 @@ func getFileList(path string) map[string]int64 {
 	}
 	return ret
 }
+
+// 获取HTML文件列表
+func getHTMLFileList() []string {
+	var ret []string
+	rd, err := os.ReadDir("send/")
+	if err != nil {
+		elog.Println("getSendList: ", err)
+		return ret
+	}
+	for _, fi := range rd {
+		if !fi.IsDir() {
+			info, err := fi.Info()
+			if err != nil {
+				continue
+			}
+			if strings.HasSuffix(info.Name(), ".htm") || strings.HasSuffix(info.Name(), ".html") {
+				ret = append(ret, info.Name())
+			}
+		}
+	}
+	return ret
+}
+
+// 获取文件内容string
+func getFileStr(name string) string {
+	if name == "" {
+		return ""
+	}
+	b, _ := os.ReadFile("send/" + name)
+	return string(b)
+}
+
+func unescaped(x string) interface{} { return template.HTML(x) }
 
 // 获取ip地址
 func getIP(r *http.Request) string {
@@ -140,22 +174,24 @@ func unzipFile(zipf io.ReaderAt, size int64, dst string) error {
 		return err
 	}
 	for _, f := range zipr.File {
-		filePath := f.Name
 		if f.FileInfo().IsDir() {
-			_ = os.MkdirAll(filePath, 0755)
+			err = os.MkdirAll(f.Name, 0755)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 		// 创建对应文件夹
-		err = os.MkdirAll(filepath.Dir(filePath), 0755)
+		err = os.MkdirAll(filepath.Dir(f.Name), 0755)
 		if err != nil {
 			return err
 		}
 		// 解压到的目标文件
-		err = os.RemoveAll(dst + filePath)
+		err = os.RemoveAll(dst + f.Name)
 		if err != nil {
 			return err
 		}
-		dstFile, err := os.OpenFile(dst+filePath, os.O_WRONLY|os.O_CREATE, f.Mode())
+		dstFile, err := os.OpenFile(dst+f.Name, os.O_WRONLY|os.O_CREATE, f.Mode())
 		if err != nil {
 			return err
 		}
@@ -178,22 +214,18 @@ func copyFile(src string, dst string) error {
 	if err != nil {
 		return err
 	}
-
 	if !sourceFileStat.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a regular file", src)
+		return errors.New(src + " is not a regular file")
 	}
-
 	source, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-
 	destination, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	_, err = io.Copy(destination, source)
-
 	source.Close()
 	destination.Close()
 	return err
@@ -201,4 +233,43 @@ func copyFile(src string, dst string) error {
 
 func alertAndRedir(w http.ResponseWriter, alert string, redir string) {
 	w.Write([]byte("<!DOCTYPE html><script type='text/javascript'>alert(`" + alert + "`);window.location.replace(`" + redir + "`);</script>"))
+}
+
+// 检查导入比赛的zip文件
+func checkUpldContestZip(zipf io.ReaderAt, size int64) error {
+	zipr, err := zip.NewReader(zipf, size)
+	if err != nil {
+		return err
+	}
+	for _, f := range zipr.File {
+		if f.Name == "task.db" || strings.HasPrefix(f.Name, "tasks/") || strings.HasPrefix(f.Name, "send/") {
+			continue
+		} else {
+			return errors.New("包含了不合规的文件")
+		}
+	}
+	return nil
+}
+
+// 检查导入测试点的zip文件
+func checkUpldTestPointsZip(zipf io.ReaderAt, size int64, name string) error {
+	zipr, err := zip.NewReader(zipf, size)
+	if err != nil {
+		return err
+	}
+	cnt := len(zipr.File)
+	if cnt == 0 {
+		return errors.New("找不到任务点")
+	}
+	if cnt%2 != 0 {
+		return errors.New("任务点个数不匹配")
+	}
+	for _, f := range zipr.File {
+		if strings.HasPrefix(f.Name, name) && (strings.HasSuffix(f.Name, ".in") || strings.HasSuffix(f.Name, ".out")) {
+			continue
+		} else {
+			return errors.New("包含了不合规的文件")
+		}
+	}
+	return nil
 }

@@ -4,14 +4,63 @@
 <fieldset id="editTask">
 <legend>编辑任务点</legend>
 <form method="post" action="/editTask">
-<div>
+<fieldset>
 <label style="width: 300px; text-align: right; display: inline-block">名称：{{.Name}}</label>
-<input type="hidden" name="tn" value="{{.Name}}" />
+<input type="hidden" name="tn" value="{{.Name}}"/>
+</fieldset>
+<fieldset>
+<fieldset>
+<input type="radio" id="usehtml" name="ifUseHTML" value="use" {{if .Prob.UseHTML}}checked{{end}} onclick="ifUseHtml()"/>
+<label for="usehtml">引用上传的HTML文件</label>
+<div>
+<ul>
+{{range $name := getHTMLFileList}}
+<li>
+<input type="radio" id="{{$name}}" class="usehtmlfiles" name="htmlfiles" value="{{$name}}" {{if eq $.Task.Prob.HTMLName $name}}checked{{end}}/>
+<label for="{{$name}}">{{$name}}</label>
+</li>
+{{else}}
+<li>无可用HTML文件</li>
+{{end}}
+</ul>
+</div>
+</fieldset>
+<fieldset>
+<input type="radio" id="notusehtml" name="ifUseHTML" value="notuse" {{if not .Prob.UseHTML}}checked{{end}} onclick="ifUseHtml()"/>
+<label for="notusehtml">使用题目详情编辑器（留空的字段将不会显示）</label>
+<div>
+<div>
+<label for="probtitle" style="width: 300px; text-align: right; display: inline-block">标题（20字内）：</label>
+<input type="text" id="probtitle" name="probtitle" minlength="1" maxlength="20" size="20" class="probinfo" value="{{.Prob.Title}}" />
 </div>
 <div>
-<label for="introduction" style="width: 300px; text-align: right; display: inline-block">简介（100字内）：</label>
-<textarea id="introduction" name="introduction" rows="5" cols="20" minlength="0" maxlength="100">{{.Introduction}}</textarea>
+<label for="probback" style="width: 300px; text-align: right; display: inline-block">背景（500字内，允许HTML）：</label>
+<textarea id="probback" name="probback" rows="5" cols="20" minlength="0" maxlength="500" class="probinfo">{{.Prob.Background}}</textarea>
 </div>
+<div>
+<label for="probintro" style="width: 300px; text-align: right; display: inline-block">描述（5000字内，允许HTML）：</label>
+<textarea id="probintro" name="probintro" rows="5" cols="20" minlength="0" maxlength="5000" class="probinfo">{{.Prob.Introduction}}</textarea>
+</div>
+<div>
+<label for="probin" style="width: 300px; text-align: right; display: inline-block">输入提示（500字内，允许HTML）：</label>
+<textarea id="probin" name="probin" rows="5" cols="20" minlength="0" maxlength="500" class="probinfo">{{.Prob.Input}}</textarea>
+</div>
+<div>
+<label for="probout" style="width: 300px; text-align: right; display: inline-block">输出提示（500字内，允许HTML）：</label>
+<textarea id="probout" name="probout" rows="5" cols="20" minlength="0" maxlength="500" class="probinfo">{{.Prob.Output}}</textarea>
+</div>
+<div>
+<label for="probic" style="width: 300px; text-align: right; display: inline-block">输入样例（500字内）：</label>
+<textarea id="probic" name="probic" rows="5" cols="20" minlength="0" maxlength="500" class="probinfo">{{.Prob.InCase}}</textarea>
+</div>
+<div>
+<label for="proboc" style="width: 300px; text-align: right; display: inline-block">输出样例（500字内）：</label>
+<textarea id="proboc" name="proboc" rows="5" cols="20" minlength="0" maxlength="500" class="probinfo">{{.Prob.OutCase}}</textarea>
+</div>
+</div>
+</fieldset>
+</fieldset>
+<fieldset>
 <div>
 <input type="checkbox" id="subd" name="subd" value="subd" {{if .SubDir}}checked{{end}} />
 <label for="subd">建立子文件夹</label>
@@ -24,14 +73,17 @@
 <label for="fileType" style="width: 300px; text-align: right; display: inline-block">允许的后缀（例如 ".cpp" ）：</label>
 <input type="text" id="fileType" name="fileType" required minlength="1" maxlength="8" size="20" value="{{.FileType}}"/>
 </div>
-<div>
+</fieldset>
+<fieldset>
+<fieldset>
 <input type="radio" id="recv" name="recvOrJudge" value="recv" {{if not .Judge}}checked{{end}} onclick="ifJudge()"/>
 <label for="recv">仅收取</label>
+</fieldset>
+<fieldset>
 <input type="radio" id="judge" name="recvOrJudge" value="judge" {{if .Judge}}checked{{end}} onclick="ifJudge()"/>
 <label for="judge">内置简单评测</label>
 <p>警告：内置简单评测无任何安保措施！提交者有可能利用那些漏洞！</p>
 <p>注意：内置简单评测仅支持C++，且为单线程评测。评测结果仅供参考。此功能在某些系统上可能不可用。</p>
-</div>
 <div>
 <input type="radio" id="fileIO" name="fileOrStd" value="fileIO" {{if .FileIO}}checked{{end}} class="judgeOpt" />
 <label for="fileIO">文件输入输出</label>
@@ -50,6 +102,8 @@
 <label for="duration" style="width: 300px; text-align: right; display: inline-block">时间限制（1～1000毫秒）：</label>
 {{if .Duration}}<input type="number" id="duration" name="duration" min="1" max="10000" required class="judgeOpt" value="{{.Duration}}" />{{else}}<input type="number" id="duration" name="duration" min="1" max="10000" required class="judgeOpt" value="1000" />{{end}}
 </div>
+</fieldset>
+</fieldset>
 <div>
 <input type="submit" class="btn" value="提交保存">
 <div>
@@ -60,7 +114,7 @@
 <label for="testpoints" style="width: 300px; text-align: right; display: inline-block">上传测试点：</label>
 <input type="hidden" name="tn" value="{{.Name}}" />
 <input type="file" id="testpoints" name="testpoints" accept=".zip" class="judgeOpt" required />
-<p>注意：必须为zip格式，对所有文件直接压缩而不是压缩文件夹。前缀需与真实名称一致，后面可使用数字从1开始编号。</p>
+<p>注意：必须为zip格式，对所有文件直接压缩而不是压缩文件夹。前缀需与真实名称一致，后面使用数字从1开始编号。</p>
 <p>注意：.in文件代表输入，.out文件代表正确的输出。上传的文件应不大于100MB。</p>
 <p>举例：chengxin1.in/chengxin1.out为一组测试点。</p>
 <input type="submit" class="btn" value="上传">
@@ -84,6 +138,30 @@ function ifJudge()
   for (var i = 0; i < judgeOpt.length; i++)
   { //循环遍历
     judgeOpt[i].disabled = recv.checked;
+  }
+}
+
+var useHTML = document.getElementById("usehtml");
+var useHTMLFiles = document.getElementsByClassName("usehtmlfiles");
+var probInfo = document.getElementsByClassName("probinfo");
+for (var i = 0; i < useHTMLFiles.length; i++)
+{ //循环遍历
+  useHTMLFiles[i].disabled = !useHTML.checked;
+}
+for (var i = 0; i < probInfo.length; i++)
+{ //循环遍历
+  probInfo[i].disabled = useHTML.checked;
+}
+
+function ifUseHtml() 
+{
+  for (var i = 0; i < useHTMLFiles.length; i++)
+  { //循环遍历
+    useHTMLFiles[i].disabled = !useHTML.checked;
+  }
+  for (var i = 0; i < probInfo.length; i++)
+  { //循环遍历
+    probInfo[i].disabled = useHTML.checked;
   }
 }
 </script>

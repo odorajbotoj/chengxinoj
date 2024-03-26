@@ -12,12 +12,25 @@ import (
 	"github.com/tidwall/buntdb"
 )
 
+type Problem struct {
+	UseHTML  bool   // 引用HTML文件
+	HTMLName string // 引用的HTML文件名
+
+	Title        string // 标题
+	Background   string // 题目背景
+	Introduction string // 题目描述
+	Input        string // 输入描述
+	Output       string // 输出描述
+	InCase       string // 样例输入
+	OutCase      string // 样例输出
+}
+
 type TaskPoint struct {
-	Name         string // 名字
-	Introduction string // 简介
-	SubDir       bool   // 建立子文件夹
-	MaxSize      int64  // 最大文件大小（字节）
-	FileType     string // 允许的后缀
+	Name     string  // 名字
+	Prob     Problem // 题目
+	SubDir   bool    // 建立子文件夹
+	MaxSize  int64   // 最大文件大小（字节）
+	FileType string  // 允许的后缀
 
 	Judge    bool   // 是否评测（以下内容仅在此选项为真时有意义）
 	FileIO   bool   // 文件输入输出（否则是标准输入输出）
@@ -80,7 +93,10 @@ func fTask(w http.ResponseWriter, r *http.Request) {
 		}
 		pd := getPageData(ud)
 		pd.Task = task
-		tmpl, err := template.New("task").Parse(TASKHTML)
+		tmpl, err := template.New("task").Funcs(template.FuncMap{
+			"getFileStr": getFileStr,
+			"unescaped":  unescaped,
+		}).Parse(TASKHTML)
 		if err != nil {
 			elog.Println(err)
 			w.Write([]byte("无法渲染页面"))
@@ -183,7 +199,9 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gvm.RUnlock()
-		tmpl, err := template.New("editTask").Parse(EDITTASKHTML)
+		tmpl, err := template.New("editTask").Funcs(template.FuncMap{
+			"getHTMLFileList": getHTMLFileList,
+		}).Parse(EDITTASKHTML)
 		if err != nil {
 			elog.Println(err)
 			w.Write([]byte("无法渲染页面"))
@@ -220,7 +238,21 @@ func fEditTask(w http.ResponseWriter, r *http.Request) {
 		var err error
 		t.Name = r.Form.Get("tn")
 		// 继续填充内容
-		t.Introduction = r.Form.Get("introduction")
+		if r.Form.Get("ifUseHTML") == "use" {
+			// 引用html
+			t.Prob.UseHTML = true
+			t.Prob.HTMLName = r.Form.Get("htmlfiles")
+		} else {
+			// 不引用html
+			t.Prob.UseHTML = false
+			t.Prob.Title = r.Form.Get("probtitle")
+			t.Prob.Background = r.Form.Get("probback")
+			t.Prob.Introduction = r.Form.Get("probintro")
+			t.Prob.Input = r.Form.Get("probin")
+			t.Prob.Output = r.Form.Get("probout")
+			t.Prob.InCase = r.Form.Get("probic")
+			t.Prob.OutCase = r.Form.Get("proboc")
+		}
 		if r.Form.Get("subd") == "subd" {
 			t.SubDir = true
 		}
@@ -433,6 +465,12 @@ func fUpldTest(w http.ResponseWriter, r *http.Request) {
 		zipf, zipfh, err := r.FormFile("testpoints")
 		na := r.Form.Get("tn")
 		if err != nil { // 出错则取消
+			alertAndRedir(w, "上传失败："+err.Error(), "/editTask?tn="+na)
+			elog.Println(err)
+			return
+		}
+		err = checkUpldTestPointsZip(zipf, zipfh.Size, na)
+		if err != nil {
 			alertAndRedir(w, "上传失败："+err.Error(), "/editTask?tn="+na)
 			elog.Println(err)
 			return
